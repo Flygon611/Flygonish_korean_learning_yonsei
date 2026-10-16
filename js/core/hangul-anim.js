@@ -352,7 +352,9 @@
       const toRow = rowOf(toText, changed);
       toRow.style.cssText = 'position:absolute;left:0;top:0;opacity:0;' +
         'transition:opacity 520ms var(--ease-soft) 200ms';
-      const fromRow = rowOf(fromText, null);
+      // the dashed boxes belong on the word the reader is LOOKING at, i.e. the
+      // one going away; marking the incoming one marked nothing
+      const fromRow = rowOf(fromText, changed);
       fromRow.style.transition = 'opacity 520ms var(--ease-soft)';
       stage.appendChild(toRow);
       stage.appendChild(fromRow);
@@ -431,7 +433,7 @@
         const svg = root.querySelector('.marrow');
         if (svg) svg.remove();
         root.querySelectorAll('.mflyer').forEach((e) => e.remove());
-        fromRow.querySelectorAll('.is-target').forEach((e) => e.classList.remove('is-target', 'is-marked'));
+        root.querySelectorAll('.is-target').forEach((e) => e.classList.remove('is-target', 'is-marked'));
       }, t.hold + t.travel + t.settle));
     }
 

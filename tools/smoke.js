@@ -357,6 +357,19 @@ go('#/vocab?mode=flash');
     YK.hangulAnim.lettersOf('안').map((l) => l.glyph).join('') === 'ㅇㅏㄴ');
   check('hangulAnim: letters carry their own drawn size',
     YK.hangulAnim.lettersOf('앉').every((l) => l.size > 0));
+  /* The dashed boxes mark the syllables that change. They were applied to the
+     INCOMING word while the timer looked for them on the OUTGOING one, so the
+     animation silently lost them and became a bare cross-fade. */
+  {
+    const host = window.document.createElement('div');
+    window.document.getElementById('view').appendChild(host);
+    YK.hangulAnim.morph(host, '배우다', '배웁니다');
+    const rows = host.querySelectorAll('.mrow');
+    check('hangulAnim: the outgoing word is marked where it changes',
+      rows.length === 2 && rows[1].querySelectorAll('.is-target').length > 0,
+      rows.length + ' rows, ' + (rows[1] ? rows[1].querySelectorAll('.is-target').length : 0) + ' marks');
+    host.remove();
+  }
   /* The decomposition must land on the same footprint as the font's own
      composition. A real syllable inks about 0.83 x 0.89 em; the first attempt
      rendered 25% too tall because the cell was 1.32em high. */
