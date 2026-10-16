@@ -316,7 +316,8 @@
 .conj__form { font-family: var(--font-ko-serif); font-size: 19px; margin-left: auto;
   min-width: 8ch; text-align: right; }
 .conj__stage:empty { display: none; }
-.conj__stage { margin-top: var(--s2); padding-left: var(--s2); }
+.conj__stage { margin-top: var(--s3); }
+.conj__stage .mrow { font-size: 46px; }
 .conj__row.is-verbonly .conj__label { color: var(--muted); }
 
 /* phonetics: pair + the deconstruction stage */
@@ -324,5 +325,6 @@
 .pairwrap .pair { flex: 1; }
 .pair__open { flex: none; min-width: 40px; }
 .pair__stage:empty { display: none; }
-.pair__stage { padding: 2px 4px 6px; }
-.pair__stage .mrow { font-size: 26px; }
+.pair__stage { padding: var(--s2) 0 var(--s3); }
+.pair__stage .morph2 { min-height: 108px; }
+.pair__stage .mrow { font-size: 40px; }

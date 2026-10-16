@@ -1,74 +1,50 @@
 /* --------------------------------------------------------------- hangul-anim
-   Pull a syllable apart into its letters, swap the letters that change, then
-   put it back together.
+   Watch a Korean word change, letter by letter.
 
-   A syllable is rendered as three absolutely positioned pieces (초성/중성/종성)
-   inside a fixed box, arranged by the shape of the vowel. The animation moves
-   those pieces rather than cross-fading whole glyphs, which is the point: you
-   can see that 덥 becomes 더워 because the ㅂ leaves and a 우 takes its place. */
+   The end state is always a NORMAL WORD, not a pile of jamo — the letters only
+   exist in the middle of the animation:
+
+     1. the word sits still, with a dashed box on the syllables that change
+     2. those syllables open into their letters
+     3. letters the new form does not need rise or sink away and fade
+     4. the letters that survive travel to their new slot, with a curved arrow
+     5. everything closes back into the finished word
+
+   Step 4 is why this exists: in 한국어 → 한구거 you can watch the 받침 ㄱ let go
+   of 국 and slide across into 거. That is the rule itself, not a drawing of it. */
 (function () {
   const YK = (window.YK = window.YK || {});
   const J = YK.jamo;
   if (!J) return;
   const { h } = YK;
 
-  /* Where each piece's CENTRE sits, as a percentage of the cell. Centres, not
-     corners: a jamo glyph has its own height, and positioning by top-left made
-     the final consonant hang out of the box. */
-  const SLOTS = {
-    // with a final consonant the two upper pieces sit higher to make room
-    v: { cho: [28, 34], jung: [74, 34], jong: [50, 74] },  // ㅏㅓㅣ… : side by side
-    h: { cho: [50, 22], jung: [50, 52], jong: [50, 78] },  // ㅗㅜㅡ : stacked
-    m: { cho: [26, 32], jung: [74, 54], jong: [50, 78] },  // ㅘㅝㅢ : mixed
+  const W = 1.0, H = 1.32;          // one syllable box, in em (matches .msyl)
+
+  /* letter centres inside a box, as fractions — with a 받침 the two upper
+     letters sit higher to leave room for it */
+  const S = {
+    v: { cho: [0.28, 0.34], jung: [0.74, 0.34], jong: [0.50, 0.74] },
+    h: { cho: [0.50, 0.22], jung: [0.50, 0.52], jong: [0.50, 0.78] },
+    m: { cho: [0.26, 0.32], jung: [0.74, 0.54], jong: [0.50, 0.78] },
   };
-  const SLOTS_NO_JONG = {
-    v: { cho: [28, 48], jung: [74, 48] },                  // centred when there is no 받침
-    h: { cho: [50, 36], jung: [50, 64] },
-    m: { cho: [26, 46], jung: [74, 62] },
-  };
-  const CENTRE = 'translate(-50%, -50%)';
-  const FLY = {
-    cho: [-0.22, -0.18], jung: [0.24, -0.12], jong: [0, 0.24],
+  const S0 = {
+    v: { cho: [0.28, 0.48], jung: [0.74, 0.48] },
+    h: { cho: [0.50, 0.36], jung: [0.50, 0.64] },
+    m: { cho: [0.26, 0.46], jung: [0.74, 0.62] },
   };
 
-  function piecesOf(ch) {
+  function lettersOf(ch) {
     const p = J.split(ch);
-    if (!p) return null;
-    return { cho: p.cho, jung: p.jung, jong: p.jong, layout: J.layoutOf(ch) };
-  }
-
-  /* one syllable, as a box with its letters placed inside */
-  function cell(ch) {
-    const p = piecesOf(ch);
-    const el = h('span', { class: 'hcell' + (p ? ' hcell--' + p.layout : ''), 'data-ch': ch });
-    if (!p) { el.classList.add('hcell--raw'); el.textContent = ch; return el; }
-    const slots = p.jong ? SLOTS[p.layout] : SLOTS_NO_JONG[p.layout];
+    if (!p) return [];
+    const slots = p.jong ? S[J.layoutOf(ch)] : S0[J.layoutOf(ch)];
+    const out = [];
     for (const role of ['cho', 'jung', 'jong']) {
-      const g = p[role];
-      if (!g || !slots[role]) continue;
-      el.appendChild(h('span', {
-        class: 'hpart hpart--' + role, 'data-role': role,
-        style: { left: slots[role][0] + '%', top: slots[role][1] + '%' },
-      }, g));
+      if (p[role] && slots[role]) out.push({ role, glyph: p[role], x: slots[role][0], y: slots[role][1] });
     }
-    return el;
+    return out;
   }
 
-  const partsOf = (c) => Array.from(c.querySelectorAll('.hpart'));
-
-  function fly(cellEl, on, instant) {
-    if (instant) cellEl.classList.add('is-instant');
-    for (const p of partsOf(cellEl)) {
-      const d = FLY[p.dataset.role] || [0, 0];
-      p.style.transform = on
-        ? `${CENTRE} translate(${d[0]}em, ${d[1]}em)`
-        : CENTRE;
-      p.style.opacity = on ? '0.25' : '';
-    }
-    if (instant) requestAnimationFrame(() => cellEl.classList.remove('is-instant'));
-  }
-
-  /* longest shared head and tail, so untouched syllables stay put */
+  /* longest shared head and tail, so untouched syllables never move */
   function align(a, b) {
     let p = 0;
     while (p < a.length && p < b.length && a[p] === b[p]) p++;
@@ -78,78 +54,234 @@
     return { prefix: p, suffix: s };
   }
 
-  /* Animate fromText into toText inside `root`.
-     Returns a function that plays it again. */
+  /* a plain, correctly rendered syllable — the resting state */
+  const syl = (ch) => h('span', { class: 'msyl', 'data-ch': ch }, ch);
+
+  /* one syllable opened into positioned letters */
+  function openSyl(ch) {
+    const box = h('span', { class: 'msyl msyl--open' });
+    const letters = lettersOf(ch);
+    for (const L of letters) {
+      const el = h('span', {
+        class: 'mletter', 'data-role': L.role,
+        style: { left: (L.x * W) + 'em', top: (L.y * H) + 'em' },
+      }, L.glyph);
+      L.el = el;
+      box.appendChild(el);
+    }
+    return { box, letters };
+  }
+
+  /* pair the letters up: what leaves, what travels, what arrives */
+  function match(oldL, newL) {
+    const taken = new Set();
+    const moves = [];
+    for (const o of oldL) {
+      let idx = newL.findIndex((n, i) => !taken.has(i) && n.glyph === o.glyph && n.role === o.role);
+      if (idx < 0) idx = newL.findIndex((n, i) => !taken.has(i) && n.glyph === o.glyph);
+      if (idx >= 0) { taken.add(idx); moves.push([o, newL[idx]]); }
+    }
+    return {
+      moves,
+      leaves: oldL.filter((o) => !moves.some((m) => m[0] === o)),
+      arrives: newL.filter((n, i) => !taken.has(i)),
+    };
+  }
+
+  const CENTRE = 'translate(-50%, -50%)';
+  const rowFontSize = (row) => parseFloat(getComputedStyle(row).fontSize) || 44;
+
+  /* Curved arrows from where a letter was to where it goes, drawn over the row
+     and revealed with dash-offset so they "point" while the letter travels. */
+  function drawArrows(svg, root, from, to, row) {
+    const box = row.getBoundingClientRect();
+    const host = root.getBoundingClientRect();
+    const fs = rowFontSize(row);
+    const w = box.width || 1, hgt = box.height || 1;
+    svg.setAttribute('viewBox', '0 0 ' + w + ' ' + hgt);
+    svg.setAttribute('width', w);
+    svg.setAttribute('height', hgt);
+    svg.style.left = (box.left - host.left) + 'px';
+    svg.style.top = (box.top - host.top) + 'px';
+    svg.innerHTML = '';
+    const NS = 'http://www.w3.org/2000/svg';
+    const defs = document.createElementNS(NS, 'defs');
+    defs.innerHTML = '<marker id="ykarrowhead" viewBox="0 0 10 10" refX="8" refY="5" ' +
+      'markerWidth="5" markerHeight="5" orient="auto-start-reverse">' +
+      '<path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/></marker>';
+    svg.appendChild(defs);
+    from.forEach((f, i) => {
+      const g = to[i];
+      const x1 = f.x * fs, y1 = f.y * fs, x2 = g.x * fs, y2 = g.y * fs;
+      if (Math.hypot(x2 - x1, y2 - y1) < 8) return;
+      const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+      const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy) || 1;
+      const bow = Math.min(26, len * 0.34);
+      const path = document.createElementNS(NS, 'path');
+      path.setAttribute('d', 'M ' + x1 + ' ' + y1 + ' Q ' + (mx + (-dy / len) * bow) + ' ' +
+        (my + (dx / len) * bow) + ' ' + x2 + ' ' + y2);
+      path.setAttribute('class', 'marrow__path');
+      path.style.strokeDasharray = '400';
+      path.style.strokeDashoffset = '400';
+      svg.appendChild(path);
+      setTimeout(() => {
+        path.style.transition = 'stroke-dashoffset 640ms var(--ease-out), opacity 320ms linear';
+        path.style.strokeDashoffset = '0';
+      }, 140 + i * 120);
+    });
+  }
+
   function morph(root, fromText, toText, opts) {
-    const timing = Object.assign({ explode: 230, assemble: 340, hold: 1200 }, opts || {});
+    const t = Object.assign({ hold: 1000, mark: 420, move: 1050, close: 460, size: 0 }, opts || {});
     const still = YK.anim && YK.anim.still && YK.anim.still();
+    let timers = [];
+    const clearT = () => { timers.forEach(clearTimeout); timers = []; };
 
     function play() {
+      clearT();
       YK.clear(root);
+      root.classList.add('morphroot');
       root.classList.remove('is-done');
-      const from = [...fromText];
-      const to = [...toText];
+      const stale = root.querySelector('.marrow');
+      if (stale) stale.remove();
+
+      const from = [...fromText], to = [...toText];
       const { prefix, suffix } = align(from, to);
-      const fromMid = from.slice(prefix, from.length - suffix);
-      const toMid = to.slice(prefix, to.length - suffix);
+      const midFrom = from.slice(prefix, from.length - suffix);
+      const midTo = to.slice(prefix, to.length - suffix);
 
       const row = h('div', { class: 'mrow' });
-      from.slice(0, prefix).forEach((s) => row.appendChild(cell(s)));
+      from.slice(0, prefix).forEach((c) => row.appendChild(syl(c)));
       const mid = h('span', { class: 'mmid' });
-      fromMid.forEach((s) => mid.appendChild(cell(s)));
       row.appendChild(mid);
-      to.slice(to.length - suffix).forEach((s) => row.appendChild(cell(s)));
+      to.slice(to.length - suffix).forEach((c) => row.appendChild(syl(c)));
       root.appendChild(row);
+      if (t.size) row.style.fontSize = t.size + 'px';
 
-      const oldCells = Array.from(mid.querySelectorAll('.hcell'));
-
-      // reduced motion: swap the letters, skip the flight
-      if (still) {
-        YK.clear(mid);
-        toMid.forEach((s) => mid.appendChild(cell(s)));
+      if (still) {                                   // reduced motion: just answer
+        midTo.forEach((c) => mid.appendChild(syl(c)));
         root.classList.add('is-done');
         return;
       }
 
-      requestAnimationFrame(() => oldCells.forEach((c) => fly(c, true)));
+      const plain = midFrom.map((c) => {             // 1. the word as it is
+        const s = syl(c);
+        mid.appendChild(s);
+        return s;
+      });
 
-      setTimeout(() => {
+      timers.push(setTimeout(() => {                 // 2. box the part that changes
+        plain.forEach((s) => s.classList.add('is-target'));
+      }, t.mark));
+
+      timers.push(setTimeout(() => {                 // 3. open into letters
         YK.clear(mid);
-        const fresh = toMid.map((s) => {
-          const c = cell(s);
-          fly(c, true, true);              // start apart, without animating
-          return c;
+        const opened = [];
+        midFrom.forEach((c, idx) => {
+          const { box, letters } = openSyl(c);
+          box.classList.add('is-target');
+          mid.appendChild(box);
+          letters.forEach((L) => opened.push(Object.assign({}, L, { cell: idx })));
         });
-        fresh.forEach((c) => mid.appendChild(c));
-        // two frames so the browser has committed the exploded position
-        requestAnimationFrame(() => requestAnimationFrame(() => {
-          fresh.forEach((c) => fly(c, false));
-        }));
-      }, timing.explode);
 
-      setTimeout(() => root.classList.add('is-done'), timing.explode + timing.assemble);
+        timers.push(setTimeout(() => {               // 3 + 4. leave / travel / arrive
+          const oldL = [], newL = [];
+          midFrom.forEach((c, i) => lettersOf(c).forEach((L) => oldL.push(Object.assign({}, L, { cell: i }))));
+          midTo.forEach((c, i) => lettersOf(c).forEach((L) => newL.push(Object.assign({}, L, { cell: i }))));
+          const { moves, leaves, arrives } = match(oldL, newL);
+          const byKey = new Map();
+          opened.forEach((L) => byKey.set(L.cell + ':' + L.role, L.el));
+
+          leaves.forEach((L) => {
+            const el = byKey.get(L.cell + ':' + L.role);
+            if (!el) return;
+            el.style.transform = CENTRE + ' translate(0, ' + (L.role === 'cho' ? -1.6 : 1.9) + 'em)';
+            el.style.opacity = '0';
+          });
+
+          /* The arrow is drawn over the whole ROW, so its coordinates have to
+             include the unchanged syllables that come before the mid section —
+             the letters themselves are positioned inside their own box. */
+          const base = prefix;
+          const arrowFrom = [], arrowTo = [];
+          moves.forEach(([o, n]) => {
+            const el = byKey.get(o.cell + ':' + o.role);
+            if (!el) return;
+            const dx = (n.cell - o.cell) * W + (n.x - o.x);
+            const dy = (n.y - o.y) * H;
+            el.style.transform = CENTRE + ' translate(' + dx + 'em, ' + dy + 'em)';
+            if (Math.hypot(dx, dy) > 0.45) {
+              arrowFrom.push({ x: (base + o.cell + o.x) * W, y: o.y * H });
+              arrowTo.push({ x: (base + n.cell + n.x) * W, y: n.y * H });
+            }
+          });
+
+          const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          svg.setAttribute('class', 'marrow');
+          root.appendChild(svg);
+          drawArrows(svg, root, arrowFrom, arrowTo, row);
+
+          arrives.forEach((n) => {
+            const host = mid.children[n.cell] || mid;
+            const el = h('span', {
+              class: 'mletter is-arriving', 'data-role': n.role,
+              style: { left: (n.x * W) + 'em', top: (n.y * H) + 'em' },
+            }, n.glyph);
+            host.appendChild(el);
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+              el.style.opacity = '1';
+              el.style.transform = CENTRE;
+            }));
+          });
+        }, 60));
+      }, t.hold));
+
+      timers.push(setTimeout(() => {                 // 5. close into the finished word
+        const svg = root.querySelector('.marrow');
+        if (svg) svg.classList.add('is-out');
+        YK.clear(mid);
+        midTo.forEach((c) => mid.appendChild(syl(c)));
+        root.classList.add('is-done');
+      }, t.hold + t.move));
+
+      timers.push(setTimeout(() => {
+        const svg = root.querySelector('.marrow');
+        if (svg) svg.remove();
+        mid.querySelectorAll('.is-target').forEach((e) => e.classList.remove('is-target'));
+      }, t.hold + t.move + t.close));
     }
 
     play();
     return play;
   }
 
-  /* A small self-contained widget: the word, a play button, and the animation. */
-  function widget(fromText, toText, opts) {
-    const stage = h('div', { class: 'morph' });
-    const label = h('div', { class: 'morph__label' },
-      h('span', { class: 'morph__from' }, fromText),
-      h('span', { class: 'morph__arrow' }, '→'),
-      h('span', { class: 'morph__to' }, toText));
-    let play = null;
-    const btn = h('button', { class: 'btn btn--sm', type: 'button' }, '拆开看');
-    btn.addEventListener('click', () => { if (play) play(); });
-    const wrap = h('div', { class: 'morphwrap' }, label, stage, btn);
-    if (opts && opts.auto) YK.anim && YK.anim.onReady(() => { play = morph(stage, fromText, toText); });
-    else play = morph(stage, fromText, toText);
-    YK.anim && YK.anim.onReady(() => {});
-    return wrap;
+  /* the first implementation's per-syllable box; kept because the tests use it */
+  function cell(ch) {
+    const el = h('span', { class: 'hcell', 'data-ch': ch });
+    const letters = lettersOf(ch);
+    if (!letters.length) { el.classList.add('hcell--raw'); el.textContent = ch; return el; }
+    el.classList.add('hcell--' + J.layoutOf(ch));
+    for (const L of letters) {
+      el.appendChild(h('span', {
+        class: 'hpart hpart--' + L.role, 'data-role': L.role,
+        style: { left: (L.x * 100) + '%', top: (L.y * 100) + '%' },
+      }, L.glyph));
+    }
+    return el;
   }
 
-  YK.hangulAnim = { cell, morph, widget, align };
+  function widget(fromText, toText, opts) {
+    const stage = h('div', { class: 'morph2' });
+    const play = morph(stage, fromText, toText, opts);
+    const btn = h('button', { class: 'btn btn--sm', type: 'button' }, '拆开看');
+    btn.addEventListener('click', () => play());
+    return h('div', { class: 'morphwrap' },
+      h('div', { class: 'morph__label' },
+        h('span', { class: 'morph__from' }, fromText),
+        h('span', { class: 'morph__arrow' }, '→'),
+        h('span', { class: 'morph__to' }, toText)),
+      btn, stage);
+  }
+
+  YK.hangulAnim = { cell, morph, widget, align, lettersOf };
 })();
