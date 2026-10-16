@@ -63,12 +63,50 @@
     [/运动|球|跑|游泳|爬山/, 'sports'],
     [/人|朋友|见面|介绍/, 'people'],
     [/你好|问候|初次|高兴|再见/, 'hello'],
+    // concrete objects — the word page is often opened on exactly these
+    [/伞/, 'umbrella'],
+    [/包|书包|提包|箱子/, 'bag'],
+    [/自行车/, 'bicycle'],
+    [/眼镜/, 'glasses'],
+    [/帽子/, 'hat'],
+    [/鞋/, 'shoes'],
+    [/手表|钟表|表/, 'watch'],
+    [/桌子|书桌/, 'desk'],
+    [/椅子/, 'chair'],
+    [/电脑|计算机/, 'computer'],
+    [/照相机|相机/, 'camera'],
+    [/钥匙/, 'key'],
+    [/礼物/, 'gift'],
+    [/花/, 'flower'],
+    [/狗/, 'dog'],
+    [/猫/, 'cat'],
+    [/窗户|窗/, 'window'],
+    [/门/, 'door'],
+    [/钱|费用|价格/, 'money'],
+    [/票/, 'ticket'],
+    [/护照/, 'passport'],
+    [/药/, 'medicine'],
+    [/面包/, 'bread'],
+    [/水果|果/, 'fruit'],
+    [/^(水|凉水|热水|矿泉水)$/, 'water'],
+    [/铅笔/, 'pencil'],
+    [/笔记本/, 'notebook'],
+    [/衣服|服装/, 'clothes'],
+    [/头发/, 'hair'],
+    [/手/, 'hand'],
+    [/雨/, 'weather3'],
+    [/雪/, 'snow'],
+    [/热/, 'hot'],
+    [/冷/, 'cold'],
   ];
 
-  /* null means there is no honest picture for this word */
+  /* null means there is no honest picture for this word. The object rules come
+     last so that a concrete noun (雨伞) beats the broad theme it belongs to (雨). */
   function themeOf(entry) {
     const zh = (entry && entry.zh) || '';
-    for (const [re, slug] of THEME_RULES) if (re.test(zh)) return slug;
+    for (let i = THEME_RULES.length - 1; i >= 0; i--) {
+      if (THEME_RULES[i][0].test(zh)) return THEME_RULES[i][1];
+    }
     return null;
   }
 

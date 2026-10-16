@@ -32,6 +32,20 @@ PAIRS = [
     ('summer', '夏'), ('autumn', '秋'), ('winter', '冬'),
     ('airport', '空港'), ('bus', 'バス'), ('taxi', 'タクシー'),
     ('book', '本'), ('letter', '手紙'), ('party', 'パーティー'),
+    # everyday objects: a word page needs a picture of the THING, and the first
+    # round of themes only covered broad situations
+    ('umbrella', '傘'), ('bag', 'かばん'), ('bicycle', '自転車'),
+    ('glasses', '眼鏡'), ('hat', '帽子'), ('shoes', '靴'),
+    ('watch', '腕時計'), ('desk', '机'), ('chair', '椅子'),
+    ('computer', 'パソコン'), ('camera', 'カメラ'), ('key', '鍵'),
+    ('gift', 'プレゼント'), ('flower', '花'), ('dog', '犬'),
+    ('cat', '猫'), ('window', '窓'), ('door', 'ドア'),
+    ('money', 'お金'), ('ticket', '切符'), ('passport', 'パスポート'),
+    ('medicine', '薬'), ('bread', 'パン'), ('fruit', '果物'),
+    ('coffee', 'コーヒー'), ('water', '水'), ('rice', 'ご飯茶碗'),
+    ('pencil', '鉛筆'), ('notebook', 'ノート'), ('clothes', '服'),
+    ('hair', '髪'), ('hand', '手'), ('weather3', '雨'),
+    ('snow', '雪'), ('hot', '暑い'), ('cold', '寒い'),
 ]
 
 BAD = re.compile(r'pyoko|navigation|default|icon|button|favicon|profile|comment|'
