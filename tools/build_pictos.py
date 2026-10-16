@@ -31,22 +31,31 @@ def card(body):
 
 
 def taegeuk(cx, cy, r):
-    """The 태극, built from four primitives rather than arc flags.
+    """The 태극: two interlocking fish, drawn as closed paths.
 
-    The first attempt used two arcs with hand-computed sweep flags and produced
-    a red blob with a blue smear — the maths was simply wrong. This construction
-    cannot go wrong: fill the disc red, lay a blue half over the bottom, then
-    drop a blue disc into the top half and a red one into the bottom. Where the
-    two small discs cross the dividing line IS the S-curve.
+    Three wrong versions came before this one, every one of them caught by
+    LOOKING at the render rather than by reading the code:
+      1. two arcs with hand-computed sweep flags -> a red blob with a blue smear
+      2. full discs instead of half-arcs -> two tangent circles, i.e. "two balls"
+      3. sweeps 1/1 instead of 1/0 -> the blue fish swallowed the red one
+    The path below is copied from the variant that was checked on screen.
+    No eyes: the dots belong to the Chinese taijitu, the Korean 태극 has none,
+    and with them the mark read as two round lobes at 44px.
+    The 45 degree rotation matches the angle used on the flag.
     """
     h = r / 2
-    return (
-        '<circle cx="%.2f" cy="%.2f" r="%.2f" fill="%s"/>' % (cx, cy, r, RED)
-        + '<path d="M %.2f %.2f A %.2f %.2f 0 0 0 %.2f %.2f Z" fill="%s"/>'
-          % (cx - r, cy, r, r, cx + r, cy, BLUE)
-        + '<circle cx="%.2f" cy="%.2f" r="%.2f" fill="%s"/>' % (cx, cy - h, h, BLUE)
-        + '<circle cx="%.2f" cy="%.2f" r="%.2f" fill="%s"/>' % (cx, cy + h, h, RED)
-    )
+    left = ('M %.2f %.2f A %.2f %.2f 0 0 0 %.2f %.2f '
+            'A %.2f %.2f 0 0 1 %.2f %.2f A %.2f %.2f 0 0 0 %.2f %.2f Z' % (
+                cx, cy - r, r, r, cx, cy + r, h, h, cx, cy, h, h, cx, cy - r))
+    right = ('M %.2f %.2f A %.2f %.2f 0 0 1 %.2f %.2f '
+             'A %.2f %.2f 0 0 1 %.2f %.2f A %.2f %.2f 0 0 0 %.2f %.2f Z' % (
+                 cx, cy - r, r, r, cx, cy + r, h, h, cx, cy, h, h, cx, cy - r))
+    return ('<g transform="rotate(45 %.2f %.2f)">' % (cx, cy)
+            + '<path d="%s" fill="%s"/>' % (left, RED)
+            + '<path d="%s" fill="%s"/>' % (right, BLUE)
+            + '<circle cx="%.2f" cy="%.2f" r="%.2f" fill="none" stroke="%s" stroke-width="0.9"/>'
+              % (cx, cy, r, INK)
+            + '</g>')
 
 
 def taegeuk_mark(cx, cy, r):
