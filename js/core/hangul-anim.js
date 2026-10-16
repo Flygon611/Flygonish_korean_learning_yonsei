@@ -278,19 +278,36 @@
   /* Pair up the letters of the old and new middle sections. Whatever cannot be
      paired either leaves or arrives — and only the ones that genuinely MOVE are
      ever drawn as free letters. */
+  /* Pair the old letters with the new ones.
+
+     Only two things may pair up:
+       1. the same letter in the same slot — it did not move at all
+       2. a 받침 that becomes the initial of the FOLLOWING syllable
+
+     (2) is 연음화, and it is the only cross-syllable move Korean makes:
+     앉아요 -> 안자요, where the ㅈ of ㄵ leaves 앉 and takes over as the initial
+     of 자. Anything looser is wrong — matching "the same shape anywhere" sent
+     the ㅏ of 가다's 다 flying into the ㅏ of 않은, which means nothing. */
   function planMoves(oldL, newL) {
     const taken = new Set();
+    const used = new Set();
     const moves = [];
-    for (const o of oldL) {
-      let idx = newL.findIndex((n, i) => !taken.has(i) &&
-        n.glyph === o.glyph && n.cell === o.cell && n.role === o.role);
-      if (idx < 0) idx = newL.findIndex((n, i) => !taken.has(i) && n.glyph === o.glyph && n.role === o.role);
-      if (idx < 0) idx = newL.findIndex((n, i) => !taken.has(i) && n.glyph === o.glyph);
-      if (idx >= 0) { taken.add(idx); moves.push([o, newL[idx]]); }
+
+    function claim(matches) {
+      for (const o of oldL) {
+        if (used.has(o)) continue;
+        const idx = newL.findIndex((n, i) => !taken.has(i) && matches(o, n));
+        if (idx >= 0) { taken.add(idx); used.add(o); moves.push([o, newL[idx]]); }
+      }
     }
+
+    claim((o, n) => n.cell === o.cell && n.role === o.role && n.glyph === o.glyph);
+    claim((o, n) => (o.role === 'jong' || o.role === 'jong2') && n.role === 'cho' &&
+                    n.cell === o.cell + 1 && n.glyph === o.glyph);
+
     return {
       moves,
-      gone: oldL.filter((o) => !moves.some((m) => m[0] === o)),
+      gone: oldL.filter((o) => !used.has(o)),
       added: newL.filter((n, i) => !taken.has(i)),
     };
   }

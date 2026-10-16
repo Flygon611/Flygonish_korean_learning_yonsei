@@ -113,6 +113,29 @@ const EDGE = '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge';
   ok('未移动的字母没有多余替身', anim.ghosts === 0, JSON.stringify(anim));
   await page.screenshot({ path: '/tmp/shots/live-word.png' });
 
+  /* Matching "the same shape anywhere" once sent the ㅏ of 가다's 다 flying into
+     the ㅏ of 않은 — a movement that means nothing. Only a 받침 becoming the next
+     syllable's initial may travel. */
+  console.log('变形：不能凭空搬家');
+  await go('#/word?w=' + encodeURIComponent('가다'));
+  const gRows = await page.$$('#view .conj__row');
+  let negRow = null;
+  for (const r of gRows) {
+    const t = await page.evaluate((el) => el.querySelector('.conj__label').textContent, r);
+    if (t.indexOf('-지 않아요') >= 0) { negRow = r; break; }
+  }
+  ok('找到「-지 않아요」一行', !!negRow);
+  if (negRow) {
+    await page.evaluate((el) => el.querySelector('.conj__morph').click(), negRow);
+    await new Promise((r) => setTimeout(r, 1400));
+    const n = await page.evaluate((el) => {
+      const st = el.querySelector('.conj__stage');
+      return { arrows: st.querySelectorAll('.marrow__path').length,
+               movers: st.querySelectorAll('.mflyer.is-moving').length };
+    }, negRow);
+    ok('无关音节之间不产生搬家', n.arrows === 0 && n.movers === 0, JSON.stringify(n));
+  }
+
   console.log('布局');
   for (const [hash, name] of [['#/', '首页'], ['#/hangul', '字母'], ['#/phonetics', '音变'],
     ['#/grammar', '语法'], ['#/practice', '练习'], ['#/cast', '人物'],
