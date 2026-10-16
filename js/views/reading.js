@@ -148,17 +148,32 @@
 
     if (sec.grammar.length) {
       tail.push(ui.sectionTitle('本节的语法 · ' + sec.grammar.length + ' 条'));
-      tail.push(h('div', { class: 'grid grid--2' }, sec.grammar.map((g) => {
-        const card = h('a', { class: 'card gcard', href: '#/grammar?l=' + lesson.no,
-          style: { textDecoration: 'none', color: 'inherit' } },
-          h('div', { class: 'gcard__pat' }, g.pattern || '（未标注）'),
-          h('div', { class: 'gcard__exp' }, g.explain.length > 120 ? g.explain.slice(0, 120) + '…' : g.explain),
-          h('div', { class: 'gex' },
-            h('div', {},
-              h('div', { class: 'gex__ko' }, (g.examples[0] || {}).ko || ''),
-              h('div', { class: 'gex__zh' }, (g.examples[0] || {}).zh || '')),
-            ui.speakBtn((g.examples[0] || {}).ko || '')));
-        return card;
+      /* Full width: a pattern is the thing being taught here, so it gets the
+         room. Two cramped columns with the explanation cut off at 120 characters
+         made it a caption rather than a lesson. */
+      tail.push(h('div', { class: 'grid' }, sec.grammar.map((g) => {
+        const examples = (g.examples || []).slice(0, 3);
+        return h('section', { class: 'card gcard gcard--wide' },
+          h('div', { class: 'gcard__head' },
+            h('div', { class: 'gcard__pat' }, g.pattern || '（未标注）'),
+            h('a', { class: 'btn btn--sm', href: '#/grammar?l=' + lesson.no }, '语法库')),
+          (g.points && g.points.length > 1
+            ? g.points.map((pt, i) => h('div', { class: 'gcard__pt' },
+                h('p', { class: 'gcard__exp' },
+                  h('b', { class: 'gpoint__n' }, pt.n ? String(pt.n) + '.' : ''),
+                  pt.explain),
+                (pt.examples || []).slice(0, 2).map((e) => h('div', { class: 'gex' },
+                  h('div', {},
+                    h('div', { class: 'gex__ko' }, e.ko),
+                    h('div', { class: 'gex__zh' }, e.zh || '')),
+                  ui.speakBtn(e.ko)))))
+            : h('div', {},
+                h('p', { class: 'gcard__exp' }, g.explain),
+                examples.map((e) => h('div', { class: 'gex' },
+                  h('div', {},
+                    h('div', { class: 'gex__ko' }, e.ko),
+                    h('div', { class: 'gex__zh' }, e.zh || '')),
+                  ui.speakBtn(e.ko))))));
       })));
     }
 

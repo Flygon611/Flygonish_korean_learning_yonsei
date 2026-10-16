@@ -90,7 +90,7 @@ const EDGE = '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge';
   await go('#/word?w=' + encodeURIComponent('배우다'));
   const wd = await page.evaluate(() => ({
     rows: document.querySelectorAll('#view .conj__row').length,
-    ex: document.querySelectorAll('#view .word-row').length,
+    ex: document.querySelectorAll('#view .gex').length,
   }));
   ok('词条页有十种变形', wd.rows === 10, String(wd.rows));
   ok('词条页有课文例句', wd.ex > 0, String(wd.ex));
