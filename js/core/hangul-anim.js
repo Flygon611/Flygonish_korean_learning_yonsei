@@ -370,18 +370,30 @@
         const rowBox = fromRow.getBoundingClientRect();
         const fs = rowFontSize(fromRow);
         const ox = rowBox.left - host.left, oy = rowBox.top - host.top;
+        // how many syllables the word gains; the tail shifts by that much
+        const delta = to.length - from.length;
+        const opening = delta !== 0 ? 280 : 0;
 
         const place = (L) => ({
           left: (ox + (L.cell + L.x) * W * fs) + 'px',
           top: (oy + L.y * H * fs) + 'px',
           fontSize: (L.size * fs) + 'px',
         });
+        /* A flyer has done its job the moment it arrives: the composed glyph
+           underneath already shows that letter, so leaving the accent-coloured
+           copy sitting on top just looks like a stray blue letter. */
         const make = (L, cls) => {
-          const el = h('span', Object.assign({ class: 'mflyer ' + cls, 'data-role': L.role }, {}),
-            L.glyph);
+          const el = h('span', { class: 'mflyer ' + cls, 'data-role': L.role }, L.glyph);
           Object.assign(el.style, place(L));
           stage.appendChild(el);
           return el;
+        };
+        const retire = (el, after) => {
+          timers.push(setTimeout(() => {
+            el.style.transition = 'opacity 180ms var(--ease-soft)';
+            el.style.opacity = '0';
+            timers.push(setTimeout(() => el.remove(), 240));
+          }, after));
         };
 
         /* Letters that keep their place but whose syllable is only partly
@@ -389,18 +401,49 @@
            dropped one slips away. A syllable that is wholly new or wholly gone
            is left to the cross-fade, so this never turns into a pile of
            loose jamo. */
-        // cell indexes are row coordinates, so the cut-off has to include the prefix
-        const paired = prefix + Math.min(midFrom.length, midTo.length);
         const travel = ([o, n]) =>
           Math.hypot((n.cell - o.cell) * W + (n.x - o.x), (n.y - o.y) * H) > 0.42;
         // a letter that keeps its slot is already drawn by both words — a flyer
         // for it would just be a ghost sitting on top of the syllable
-        const mover = moves.filter(travel).map(([o, n]) => ({ el: make(o, 'is-moving'), o, n }));
-        const leaving = gone.filter((o) => o.cell < paired).map((o) => ({ el: make(o, 'is-out'), o }));
-        const entering = added.filter((n) => n.cell < paired)
-          .sort((a, b) => (a.cell + a.x) - (b.cell + b.x))
-          .map((n, i) => ({ el: make(n, 'is-add'), n, i }));
+        const mover = moves.filter(travel).map(([o, n]) => {
+          const el = make(o, 'is-moving');
+          retire(el, 1150 + 90);
+          return { el, o, n };
+        });
 
+        /* Which syllables may be taken apart at all.
+           Only ones that survive into the new word AND still share a letter with
+           their old self: 우 -> 웁 keeps ㅇ and ㅜ and merely gains a 받침, which
+           is worth showing. 다 -> 세 shares nothing — that syllable was simply
+           replaced, and splitting it would put a pile of loose jamo on screen,
+           which is exactly what we ruled out earlier. */
+        const taken = [];
+        const counts = {};
+        for (let i = 0; i < Math.min(midFrom.length, midTo.length); i++) {
+          const cell = prefix + i;
+          const o = oldL.filter((L) => L.cell === cell);
+          const n = newL.filter((L) => L.cell === cell);
+          const shared = o.filter((a) => n.some((b) => b.role === a.role && b.glyph === a.glyph));
+          if (!shared.length) continue;
+          counts[cell] = o.filter((L) => !moves.some((m) => m[0] === L)).length +
+                         n.filter((L) => !moves.some((m) => m[1] === L)).length;
+          if (counts[cell] <= 2) taken.push(cell);
+        }
+        const leaving = gone.filter((o) => taken.indexOf(o.cell) >= 0)
+          .map((o) => {
+            const el = make(o, 'is-out');
+            retire(el, 560 + 120);
+            return { el, o };
+          });
+        const entering = added.filter((n) => taken.indexOf(n.cell) >= 0)
+          .sort((a, b) => (a.cell + a.x) - (b.cell + b.x))
+          .map((n, i) => {
+            const el = make(n, 'is-add');
+            retire(el, opening + i * 90 + 520 + 100);
+            return { el, n, i };
+          });
+
+        fromRow.style.transition = 'opacity 380ms var(--ease-soft)';
         fromRow.style.opacity = '0';                // the rest of the old word fades
         toRow.style.opacity = '1';                  // …into the finished one
 
@@ -415,7 +458,57 @@
         if (arrows.length) drawArrows(svg, root, arrows, rowBox, fs);
         else svg.remove();
 
+        /* Whole syllables move as wholes. Inserting 니 into 배우다 pushes the
+           trailing 다 to the right, so the tail starts where it used to be and
+           slides over; a syllable that did not exist before drops in from above
+           in one piece — it is never taken apart into jamo. */
+        const toSyls = Array.from(toRow.children);
+        const fromSyls = Array.from(fromRow.children);
+        const firstNew = prefix + Math.min(midFrom.length, midTo.length);
+        const staggered = [];
+        toSyls.forEach((el, i) => {
+          const inTail = i >= to.length - suffix && suffix > 0;
+          const isNew = i >= firstNew && i < prefix + midTo.length;
+          if (isNew) {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(-1.15em) scale(.72)';
+            el.style.willChange = 'transform, opacity';
+            staggered.push(el);
+          } else if (inTail && delta !== 0) {
+            el.style.transform = 'translateX(' + (-delta * W * fs) + 'px)';
+            el.style.willChange = 'transform';
+          }
+        });
+        fromSyls.forEach((el, i) => {
+          if (i >= from.length - suffix && suffix > 0 && delta !== 0) {
+            // the incoming word carries this syllable and starts exactly where
+            // it is now, so the old copy must yield at once — otherwise the two
+            // sit on top of each other and the shift reads as a double image
+            el.style.transition = 'none';
+            el.style.opacity = '0';
+          } else if (i >= prefix + midTo.length && i < prefix + midFrom.length) {
+            // a syllable that only existed in the old word slips out the same way
+            el.style.transform = 'translateY(-1.15em) scale(.72)';
+            el.style.opacity = '0';
+          }
+        });
+
         requestAnimationFrame(() => requestAnimationFrame(() => {
+          /* the tail slides out of the way first, then the new syllable drops
+             into the gap — dropping both at once made them overlap in a blur */
+          staggered.forEach((el, i) => {
+            const delay = opening + i * 90;
+            el.style.transition = 'transform 520ms var(--ease-back) ' + delay + 'ms, ' +
+              'opacity 360ms var(--ease-soft) ' + delay + 'ms';
+          });
+          toSyls.forEach((el) => {
+            if (!el.style.transition) el.style.transition = 'transform 560ms var(--ease-in-out)';
+            el.style.transform = '';
+            el.style.opacity = '';
+          });
+          fromSyls.forEach((el) => {
+            if (!el.style.transition) el.style.transition = 'transform 420ms var(--ease-out), opacity 380ms var(--ease-soft)';
+          });
           for (const { el, o, n } of mover) {
             const dx = ((n.cell + n.x) - (o.cell + o.x)) * W * fs;
             const dy = ((n.y - o.y) * H) * fs;
