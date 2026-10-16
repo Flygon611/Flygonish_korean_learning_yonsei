@@ -1,0 +1,37 @@
+/* ------------------------------------------------------------------ fonts
+   Self-hosted, subsetted Noto Sans / Noto Serif (SIL OFL, see CREDITS).
+   Three families carry the type system:
+
+     黑体 sans   界面：按钮、标签、说明、表格
+     宋体 serif  学习内容与标题：课文、例句、语法点、人物名
+
+   Each file only contains the characters this site actually uses, so the
+   browser falls through to the next family in the stack for anything else
+   (for example a word typed into the search box).
+
+   No unicode-range here on purpose: the subset is what defines the coverage,
+   and per-character fallback already does the right thing. */
+
+@font-face { font-family: 'YK Sans KR'; font-style: normal; font-weight: 400;
+  font-display: swap; src: url('../assets/fonts/noto-kr-sans-400.woff') format('woff'); }
+@font-face { font-family: 'YK Sans KR'; font-style: normal; font-weight: 500 600;
+  font-display: swap; src: url('../assets/fonts/noto-kr-sans-500.woff') format('woff'); }
+@font-face { font-family: 'YK Sans KR'; font-style: normal; font-weight: 700;
+  font-display: swap; src: url('../assets/fonts/noto-kr-sans-700.woff') format('woff'); }
+
+@font-face { font-family: 'YK Sans SC'; font-style: normal; font-weight: 400;
+  font-display: swap; src: url('../assets/fonts/noto-sc-sans-400.woff') format('woff'); }
+@font-face { font-family: 'YK Sans SC'; font-style: normal; font-weight: 500 600;
+  font-display: swap; src: url('../assets/fonts/noto-sc-sans-500.woff') format('woff'); }
+@font-face { font-family: 'YK Sans SC'; font-style: normal; font-weight: 700;
+  font-display: swap; src: url('../assets/fonts/noto-sc-sans-700.woff') format('woff'); }
+
+@font-face { font-family: 'YK Serif KR'; font-style: normal; font-weight: 400;
+  font-display: swap; src: url('../assets/fonts/noto-kr-serif-400.woff') format('woff'); }
+@font-face { font-family: 'YK Serif KR'; font-style: normal; font-weight: 700;
+  font-display: swap; src: url('../assets/fonts/noto-kr-serif-700.woff') format('woff'); }
+
+@font-face { font-family: 'YK Serif SC'; font-style: normal; font-weight: 400;
+  font-display: swap; src: url('../assets/fonts/noto-sc-serif-400.woff') format('woff'); }
+@font-face { font-family: 'YK Serif SC'; font-style: normal; font-weight: 700;
+  font-display: swap; src: url('../assets/fonts/noto-sc-serif-700.woff') format('woff'); }

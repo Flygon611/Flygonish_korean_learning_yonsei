@@ -1,0 +1,89 @@
+/* ------------------------------------------------------------------ motion
+   Every rule here answers one question: does this help the user understand
+   what just happened?  Entering content fades + lifts (ease-out); things that
+   travel across the screen use ease-in-out; anything the user fires repeatedly
+   is a transition, never a keyframe. */
+
+/* route change: the incoming view only. Exiting instantly keeps navigation
+   feeling like a cut rather than a wait. */
+.view-enter { animation: view-in var(--d-slow) var(--ease-out) both; }
+@keyframes view-in {
+  from { opacity: 0; transform: translateY(9px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* lists and grids arrive as a short stagger — the eye reads the group as one
+   gesture instead of N separate pops. Capped so long lists never crawl. */
+.stagger > * { animation: item-in var(--d-slow) var(--ease-out) both; }
+@keyframes item-in {
+  from { opacity: 0; transform: translateY(11px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 38ms; }
+.stagger > *:nth-child(3) { animation-delay: 76ms; }
+.stagger > *:nth-child(4) { animation-delay: 114ms; }
+.stagger > *:nth-child(5) { animation-delay: 152ms; }
+.stagger > *:nth-child(6) { animation-delay: 190ms; }
+.stagger > *:nth-child(7) { animation-delay: 228ms; }
+.stagger > *:nth-child(8) { animation-delay: 266ms; }
+.stagger > *:nth-child(n+9) { animation-delay: 300ms; }
+
+/* dialogue lines: reading position matters, so they come in softly and
+   quickly — 26ms apart, not enough to feel like a loading sequence. */
+.stagger--tight > *:nth-child(1) { animation-delay: 0ms; }
+.stagger--tight > *:nth-child(2) { animation-delay: 26ms; }
+.stagger--tight > *:nth-child(3) { animation-delay: 52ms; }
+.stagger--tight > *:nth-child(4) { animation-delay: 78ms; }
+.stagger--tight > *:nth-child(5) { animation-delay: 104ms; }
+.stagger--tight > *:nth-child(6) { animation-delay: 130ms; }
+.stagger--tight > *:nth-child(7) { animation-delay: 156ms; }
+.stagger--tight > *:nth-child(8) { animation-delay: 182ms; }
+.stagger--tight > *:nth-child(n+9) { animation-delay: 200ms; }
+
+/* answer feedback: a small confirm, not a celebration */
+.pop-good { animation: pop-good 380ms var(--ease-out) both; }
+@keyframes pop-good {
+  0%   { transform: scale(1); }
+  38%  { transform: scale(1.035); }
+  100% { transform: scale(1); }
+}
+.shake { animation: shake 380ms var(--ease-in-out) both; }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  18%      { transform: translateX(-5px); }
+  42%      { transform: translateX(4px); }
+  66%      { transform: translateX(-2px); }
+}
+.flash-good { animation: flash-good 620ms var(--ease-out) both; }
+@keyframes flash-good {
+  0%   { background-color: var(--good-soft); }
+  100% { background-color: transparent; }
+}
+
+/* word token highlight when a lookup opens */
+@keyframes tok-ping {
+  0%   { box-shadow: 0 0 0 0 rgba(90, 81, 198, .38); }
+  100% { box-shadow: 0 0 0 12px rgba(90, 81, 198, 0); }
+}
+.is-pinged { animation: tok-ping 620ms var(--ease-out); border-radius: 5px; }
+
+/* bar fill: scaleX so it never touches layout */
+.rise { animation: rise var(--d-slow) var(--ease-out) both; }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px) scale(.99); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* skeleton shimmer for the few places we wait on the speech engine */
+@keyframes breathe { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+.breathe { animation: breathe 1.6s var(--ease-in-out) infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .view-enter, .stagger > *, .rise, .pop-good, .shake, .flash-good, .is-pinged {
+    animation: none !important;
+  }
+  /* keep the colour cue, drop the movement */
+  .flash-good { background-color: var(--good-soft); }
+  .flip__inner { transition-duration: .001ms !important; }
+}

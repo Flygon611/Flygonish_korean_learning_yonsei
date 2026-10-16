@@ -1,0 +1,346 @@
+/* -------------------------------------------------------------------- dict
+   Two jobs:
+     1. one flat index of every word the textbook teaches, so any word in any
+        dialogue can be tapped and explained;
+     2. a best-effort analyser that splits an arbitrary Korean sentence and
+        works back from a conjugated form to its dictionary form.
+   It is a study aid, not a morphological analyser — when it cannot resolve a
+   token it says so plainly instead of guessing. */
+(function () {
+  const YK = (window.YK = window.YK || {});
+
+  /* words the textbook assumes but does not always list */
+  const EXTRA = [
+    ['좀', '一点 / 请'], ['제', '我的（저의）'], ['수', '（能做/不能做的）办法'],
+    ['한', '一个'], ['아', '啊'], ['그래요', '是啊 / 好的'],
+    ['비빔밥', '拌饭'], ['꽃', '花'], ['모두', '都 / 全部'], ['시월', '十月'],
+    ['인분', '人份'], ['싶다', '想（고 싶다）'], ['어떻다', '怎么样'],
+    ['매일', '每天'], ['요일', '星期'], ['한번', '一次'], ['다음에', '下次'],
+    ['먼저', '首先'], ['그때', '那时'], ['이따가', '待会儿'], ['나중에', '以后'],
+    ['아마', '大概'], ['아직', '还'], ['거의', '几乎'], ['특히', '尤其'],
+    ['같이', '一起'], ['따로', '单独'], ['서로', '互相'], ['직접', '亲自'],
+    ['복잡하다', '复杂 / 拥挤'], ['맛있다', '好吃'], ['재미있다', '有趣'],
+    ['계시다', '在（敬语）'], ['말씀하시다', '说（敬语）'],
+    ['여름', '夏天'], ['취미', '爱好'], ['걸리다', '花费（时间）'],
+    ['목요일', '星期四'], ['아름답다', '美丽'], ['세우다', '停（车）'],
+    ['가르치다', '教'], ['전화하다', '打电话'], ['드리다', '给（谦语）'],
+ ['잠실', '蚕室'], ['걸리다', '花费（时间）'],
+    ['세우다', '停下 / 建立'], ['드리다', '给（谦语）'], ['같다', '像 / 一样'],
+    ['전화하다', '打电话'], ['이해하다', '理解'], ['파랗다', '蓝'],
+    ['이렇다', '这样'], ['그렇다', '那样'], ['저렇다', '那样（远）'],
+    ['알겠습니다', '知道了'], ['모르겠습니다', '不知道'],
+ ['어때요', '怎么样？'], ['어떻다', '怎么样'],
+    ['거', '东西（것的口语）'], ['것', '东西'], ['분', '位（敬称）'], ['사람들', '人们'],
+    ['신촌', '新村'], ['연세', '延世'], ['고향', '故乡'], ['불고기', '烤肉'],
+    ['탁구', '乒乓球'], ['지하철역', '地铁站'], ['학생회관', '学生会馆'],
+    ['할머니', '奶奶'], ['할아버지', '爷爷'], ['아내', '妻子'], ['남편', '丈夫'],
+    ['아들', '儿子'], ['딸', '女儿'], ['아이', '孩子'], ['어른', '大人'],
+    ['이번', '这次'], ['다음', '下次'], ['지난', '上一个'], ['작년', '去年'],
+    ['올해', '今年'], ['내년', '明年'], ['아직', '还'], ['벌써', '已经'],
+    ['빨리', '快'], ['천천히', '慢'], ['조금', '一点'], ['아주', '很'],
+    ['정도', '程度'], ['쯤', '左右'], ['번', '次'], ['명', '名（人）'],
+    ['권', '本（量词）'], ['병', '瓶'], ['잔', '杯'], ['그릇', '碗'],
+    ['한국어를', '韩国语（宾格）'],
+    ['네', '是 / 你的'], ['예', '是（更正式）'], ['아니요', '不'], ['아니', '不（半语）'],
+    ['저', '我（谦称）'], ['나', '我（半语）'], ['너', '你（半语）'], ['우리', '我们'],
+    ['이', '这'], ['그', '那'], ['저것', '那个（远）'], ['여기', '这里'],
+    ['거기', '那里'], ['저기', '那里（远）'], ['어디', '哪里'],
+    ['누구', '谁'], ['무엇', '什么'], ['뭐', '什么（口语）'], ['왜', '为什么'],
+    ['언제', '什么时候'], ['어떻게', '怎么'], ['얼마', '多少（钱）'],
+    ['몇', '几'], ['어느', '哪个'], ['무슨', '什么（的）'], ['어떤', '什么样的'],
+    ['있다', '有 / 在'], ['없다', '没有'], ['하다', '做'], ['되다', '成为'],
+    ['이다', '是'], ['아니다', '不是'], ['그렇다', '是的 / 那样'],
+    ['안', '不（否定副词）'], ['못', '不能'], ['잘', '好 / 好好地'],
+    ['아주', '非常'], ['매우', '非常'], ['너무', '太'], ['조금', '一点'],
+    ['많이', '很多'], ['정말', '真的'], ['진짜', '真的（口语）'], ['별로', '不太（后接否定）'],
+    ['그리고', '并且'], ['그런데', '但是'], ['그래서', '所以'], ['하지만', '但是'],
+    ['그럼', '那么'], ['그러면', '那么'], ['먼저', '首先'], ['다시', '再'],
+    ['같이', '一起'], ['함께', '一起'], ['혼자', '一个人'], ['자주', '经常'],
+    ['가끔', '偶尔'], ['항상', '总是'], ['보통', '通常'], ['요즘', '最近'],
+    ['지금', '现在'], ['오늘', '今天'], ['내일', '明天'], ['어제', '昨天'],
+    ['아침', '早上'], ['점심', '中午'], ['저녁', '晚上'], ['밤', '夜晚'],
+    ['월요일', '星期一'], ['화요일', '星期二'], ['수요일', '星期三'],
+    ['목요일', '星期四'], ['금요일', '星期五'], ['토요일', '星期六'], ['일요일', '星期日'],
+    ['주말', '周末'], ['지난주', '上周'], ['이번 주', '这周'], ['다음 주', '下周'],
+    ['하나', '一'], ['둘', '二'], ['셋', '三'], ['넷', '四'], ['다섯', '五'],
+    ['여섯', '六'], ['일곱', '七'], ['여덟', '八'], ['아홉', '九'], ['열', '十'],
+    ['일', '一（汉字词）'], ['이', '二（汉字词）'], ['삼', '三（汉字词）'],
+    ['사', '四（汉字词）'], ['오', '五（汉字词）'], ['육', '六（汉字词）'],
+    ['칠', '七（汉字词）'], ['팔', '八（汉字词）'], ['구', '九（汉字词）'], ['십', '十（汉字词）'],
+    ['백', '百'], ['천', '千'], ['만', '万'], ['원', '韩元'],
+    ['분', '位（敬称）/ 分'], ['명', '名'], ['개', '个'], ['번', '次 / 号'],
+    ['시', '点（时刻）'], ['시간', '小时'], ['살', '岁'], ['년', '年'], ['월', '月'], ['일', '日'],
+    ['씨', '先生 / 小姐（接姓后）'], ['님', '您（敬称后缀）'],
+    ['한국', '韩国'], ['한국어', '韩国语'], ['한국말', '韩国话'],
+    ['중국', '中国'], ['일본', '日本'], ['미국', '美国'], ['영국', '英国'],
+    ['러시아', '俄罗斯'], ['호주', '澳大利亚'],
+    ['사람', '人'], ['친구', '朋友'], ['가족', '家人'], ['부모님', '父母'],
+    ['아버지', '父亲'], ['어머니', '母亲'], ['형', '哥哥（男称）'], ['오빠', '哥哥（女称）'],
+    ['누나', '姐姐（男称）'], ['언니', '姐姐（女称）'], ['동생', '弟弟 / 妹妹'],
+    ['선생님', '老师'], ['학생', '学生'], ['대학생', '大学生'], ['회사원', '公司职员'],
+    ['의사', '医生'], ['간호사', '护士'], ['기자', '记者'], ['변호사', '律师'],
+    ['가수', '歌手'], ['경찰', '警察'], ['은행원', '银行职员'], ['비서', '秘书'],
+    ['집', '家'], ['학교', '学校'], ['회사', '公司'], ['은행', '银行'],
+    ['도서관', '图书馆'], ['식당', '餐厅'], ['교실', '教室'], ['화장실', '洗手间'],
+    ['가게', '商店'], ['시장', '市场'], ['병원', '医院'], ['역', '车站'],
+    ['공항', '机场'], ['지하철', '地铁'], ['버스', '公共汽车'], ['택시', '出租车'],
+    ['기차', '火车'], ['비행기', '飞机'], ['자전거', '自行车'],
+    ['물', '水'], ['밥', '饭'], ['음식', '食物'], ['과일', '水果'],
+    ['커피', '咖啡'], ['차', '茶'], ['술', '酒'], ['빵', '面包'],
+    ['책', '书'], ['공책', '笔记本'], ['연필', '铅笔'], ['볼펜', '圆珠笔'],
+    ['지우개', '橡皮'], ['가방', '包'], ['지갑', '钱包'], ['열쇠', '钥匙'],
+    ['옷', '衣服'], ['모자', '帽子'], ['신발', '鞋'], ['돈', '钱'],
+    ['날씨', '天气'], ['봄', '春天'], ['여름', '夏天'], ['가을', '秋天'], ['겨울', '冬天'],
+    ['비', '雨'], ['눈', '雪 / 眼睛'], ['바람', '风'], ['하늘', '天空'],
+    ['전화', '电话'], ['휴대폰', '手机'], ['인터넷', '网络'], ['컴퓨터', '电脑'],
+    ['영화', '电影'], ['음악', '音乐'], ['노래', '歌'], ['사진', '照片'],
+    ['운동', '运动'], ['여행', '旅行'], ['휴일', '假日'], ['방학', '假期'],
+    ['생일', '生日'], ['이름', '名字'], ['나이', '年龄'], ['직업', '职业'],
+    ['주소', '地址'], ['번호', '号码'], ['시간', '时间'], ['약속', '约定'],
+    ['안녕하세요', '你好'], ['안녕하십니까', '您好（正式）'],
+    ['감사합니다', '谢谢'], ['고맙습니다', '谢谢'], ['죄송합니다', '对不起'],
+    ['미안합니다', '对不起'], ['실례합니다', '打扰一下'], ['괜찮아요', '没关系 / 不错'],
+    ['반갑습니다', '很高兴（见到你）'], ['처음', '第一次'], ['뵙겠습니다', '拜见（谦语）'],
+    ['맛있다', '好吃'], ['재미있다', '有趣'], ['바쁘다', '忙'], ['좋다', '好'],
+    ['나쁘다', '坏'], ['크다', '大'], ['작다', '小'], ['많다', '多'], ['적다', '少'],
+    ['춥다', '冷'], ['덥다', '热'], ['예쁘다', '漂亮'], ['아름답다', '美丽'],
+    ['어렵다', '难'], ['쉽다', '容易'], ['비싸다', '贵'], ['싸다', '便宜'],
+    ['가다', '去'], ['오다', '来'], ['보다', '看'], ['사다', '买'],
+    ['팔다', '卖'], ['주다', '给'], ['받다', '收'], ['만나다', '见面'],
+    ['먹다', '吃'], ['마시다', '喝'], ['자다', '睡'], ['일어나다', '起床'],
+    ['공부하다', '学习'], ['일하다', '工作'], ['쉬다', '休息'], ['놀다', '玩'],
+    ['읽다', '读'], ['쓰다', '写 / 用'], ['듣다', '听'], ['말하다', '说'],
+    ['배우다', '学'], ['가르치다', '教'], ['알다', '知道'], ['모르다', '不知道'],
+    ['좋아하다', '喜欢'], ['싫어하다', '讨厌'], ['살다', '住'], ['있다', '在 / 有'],
+  ];
+
+  let index = null;
+  const clean = (s) => String(s || '').replace(/\s+/g, ' ').trim();
+
+  function build() {
+    if (index) return index;
+    index = Object.create(null);
+    const put = (ko, zh, lesson, src) => {
+      const k = clean(ko);
+      if (!k || !zh) return;
+      if (index[k] && index[k].zh) return;              // first definition wins
+      index[k] = { ko: k, zh: clean(zh), lesson: lesson || 0, src: src || 'vocab' };
+    };
+    for (const lesson of (window.YK_LESSONS?.lessons || [])) {
+      for (const sec of lesson.sections) {
+        for (const v of (sec.vocab || [])) put(v.ko, v.zh, lesson.no, 'vocab');
+        for (const g of (sec.grammar || [])) {
+          for (const ex of (g.examples || [])) { /* sentences stay out of the index */ }
+        }
+      }
+    }
+    for (const [ko, zh] of EXTRA) put(ko, zh, 0, 'extra');
+    for (const p of (window.YK_CAST || [])) {
+      put(p.ko, `${p.zh} · ${p.jobZh}`, 0, 'cast');
+      put(p.short, `${p.zh} · ${p.jobZh}`, 0, 'cast');
+    }
+    return index;
+  }
+
+  /* particles, longest first, so 습니다-style endings never get mistaken */
+  const JOSA = ['에서는', '에서도', '에게서', '으로서', '으로써', '에게는', '한테서',
+    '이라고', '이라는', '이라도', '이라서', '이라야', '이란', '이라는', '이랑은',
+    '하고는', '부터는', '까지는', '보다는', '에서는', '으로는', '이라', '라는',
+    '이랑', '하고', '에서', '에게', '한테', '으로', '로서', '로써', '까지',
+    '부터', '보다', '처럼', '대로', '마다', '밖에', '조차', '마저', '이나', '에는', '이지요', '이지', '이죠', '이에요', '이라도', '이란',
+    '이','가','은','는','을','를','에','의','와','과','도','만','랑','나','로','께'];
+
+  const ENDINGS = [
+    '입니다', '입니까', '이었습니다', '였습니다', '이에요', '예요',
+    '겠습니다', '겠어요', '시다', '니다', '을까요', 'ㄹ까요', '을까', 'ㄹ까', '까요',
+    '습니다', 'ㅂ니다', '십시오', '으십시오', '습니까', 'ㅂ니까', '읍시다', 'ㅂ시다',
+    '었습니다', '았습니다', '였습니다', '었어요', '았어요', '였어요',
+    '으세요', '세요', '어요', '아요', '여요', '해요',
+    '으니까', '니까', '으면서', '면서', '으려고', '려고', '으러', '러',
+    '을까요', 'ㄹ까요', '을게요', 'ㄹ게요', '게요', '을게', 'ㄹ게', '을래요', 'ㄹ래요', '래요',
+    '해서', '하여서', '해', '해요',
+    '은데', '는데', 'ㄴ데', '지만', '어서', '아서', '여서', '으면', '면',
+    '었', '았', '였', '했',
+    '네요', '군요', '지요', '죠', '네', '다', '까', '지', '기', '게', '고',
+    '서', '며', '나', '요', '은', '을', '는', 'ㄹ', '음', 'ㅁ', '어', '아', '여',
+  ];
+
+  /* ---- hangul syllable surgery, for forms the ending list cannot reach ---- */
+
+  const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
+  const JUNG = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ';
+  const JONG = ' ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ';
+
+  const isHangul = (c) => c >= '\uac00' && c <= '\ud7a3';
+  const split = (c) => {
+    const i = c.charCodeAt(0) - 0xac00;
+    const j = JONG[i % 28];
+    return {
+      cho: CHO[Math.floor(i / 588)],
+      jung: JUNG[Math.floor((i % 588) / 28)],
+      jong: j === ' ' ? '' : j,
+    };
+  };
+  const join = (cho, jung, jong) => String.fromCharCode(
+    0xac00 + CHO.indexOf(cho) * 588 + JUNG.indexOf(jung) * 28 + JONG.indexOf(jong || ' '));
+
+  const COMPOUND = {
+    'ㅑ': ['ㅣ', 'ㅏ'], 'ㅕ': ['ㅣ', 'ㅓ'], 'ㅛ': ['ㅣ', 'ㅗ'], 'ㅠ': ['ㅣ', 'ㅜ'],
+    'ㅒ': ['ㅣ', 'ㅐ'], 'ㅖ': ['ㅣ', 'ㅔ'], 'ㅘ': ['ㅗ', 'ㅏ'], 'ㅙ': ['ㅗ', 'ㅐ'],
+    'ㅝ': ['ㅜ', 'ㅓ'], 'ㅞ': ['ㅜ', 'ㅔ'], 'ㅢ': ['ㅡ', 'ㅣ'],
+  };
+
+  /* Expand contracted 아/어 forms back to their uncontracted spelling:
+     마셔요 -> 마시어요, 갔어요 -> 가았어요, 했어요 -> 하았어요 */
+  function uncontracted(word) {
+    /* Only the final syllable can carry a contraction (마시+어 -> 마셔).
+       Expanding earlier syllables would mangle the rest of the word. */
+    let tail = '';
+    if (word.length > 1 && word.endsWith('요')) { tail = '요'; word = word.slice(0, -1); }
+    if (!word) return tail;
+    const last = word[word.length - 1];
+    if (!isHangul(last)) return word + tail;
+    const { cho, jung, jong } = split(last);
+    if (!COMPOUND[jung]) return word + tail;
+    const [a, b] = COMPOUND[jung];
+    return word.slice(0, -1) + join(cho, a, '') + join('ㅇ', b, jong) + tail;
+  }
+
+  /* ㅂ/ㄷ/ㅅ/르 irregular stems cannot be reconstructed from the conjugated
+     form alone, so the common ones are listed explicitly. */
+  const IRREGULAR = {
+    '더워': '덥다', '추워': '춥다', '매워': '맵다', '어려워': '어렵다',
+    '쉬워': '쉽다', '아름다워': '아름답다', '가까워': '가깝다', '무거워': '무겁다',
+    '가벼워': '가볍다', '도와': '돕다', '고와': '곱다', '반가워': '반갑다',
+    '들어': '듣다', '걸어': '걷다', '물어': '묻다', '실어': '싣다',
+    '나아': '낫다', '지어': '짓다', '부어': '붓다', '이어': '잇다',
+    '몰라': '모르다', '빨라': '빠르다', '불러': '부르다', '골라': '고르다',
+    '흘러': '흐르다', '써': '쓰다', '커': '크다', '바빠': '바쁘다',
+    '예뻐': '예쁘다', '슬퍼': '슬프다',
+    '더우': '덥다', '추우': '춥다', '매우': '맵다', '어려우': '어렵다',
+    '쉬우': '쉽다', '아름다우': '아름답다', '가까우': '가깝다',
+    '무거우': '무겁다', '가벼우': '가볍다', '반가우': '반갑다',
+    '도우': '돕다', '고우': '곱다',
+  };
+
+  /* stem tweaks: ㅆ past, honorific 시, and stems whose final consonant is
+     dropped or swapped when an ending is attached. */
+  function stemVariants(stem) {
+    const out = [stem];
+    const last = stem[stem.length - 1];
+    if (last && isHangul(last)) {
+      const { cho, jung, jong } = split(last);
+      const withLast = (c) => stem.slice(0, -1) + c;
+      const bare = () => withLast(join(cho, jung, ''));
+
+      if (jong === 'ㅆ') {
+        // 갔어요 -> 가다, 만났어요 -> 만나다, 마셨어요 -> 마시다, 했어요 -> 하다
+        if (COMPOUND[jung]) out.push(withLast(join(cho, COMPOUND[jung][0], '')));
+        out.push(bare());
+        if (jung === 'ㅐ') {
+          out.push(withLast(join(cho, 'ㅏ', '')));      // 했어요 -> 하다
+          out.push(withLast(join(cho, 'ㅓ', 'ㅎ')));    // 어땠어요 -> 어떻다
+        }
+      } else if (cho === 'ㅅ' && jung === 'ㅣ' && !jong) {
+        out.push(stem.slice(0, -1));              // 하셨어요 -> 하다
+      }
+
+      if (jong === 'ㄹ') {
+        out.push(bare());                          // 갈까요 -> 가다, 살다 -> 사다
+        out.push(withLast(join(cho, jung, 'ㄷ'))); // 듣다 -> 들
+      } else if (jong === 'ㄷ') {
+        out.push(withLast(join(cho, jung, 'ㄹ'))); // 듣다
+      } else if (jong === 'ㅂ') {
+        out.push(bare());                          // 갑니다 -> 가다, 합니다 -> 하다
+        out.push(withLast(join(cho, jung, 'ㅜ'))); // ㅂ irregular -> 더워요
+      } else if (jong && jong !== 'ㅆ') {
+        out.push(bare());                          // 탄다 -> 타다, 있니다 -> 이다
+      }
+
+      if (jung === 'ㅡ') out.push(stem.slice(0, -1));   // 쓰다 -> 써요
+    }
+    /* 하시 + 었 -> 하셨: the honorific 시 only becomes visible one level down */
+    for (const v of out.slice()) {
+      const l = v[v.length - 1];
+      if (l && isHangul(l)) {
+        const { cho, jung, jong } = split(l);
+        if (cho === 'ㅅ' && jung === 'ㅣ' && !jong) out.push(v.slice(0, -1));
+      }
+    }
+    return Array.from(new Set(out));
+  }
+
+  function findVerb(stem) {
+    const idx = build();
+    if (IRREGULAR[stem] && idx[IRREGULAR[stem]]) return idx[IRREGULAR[stem]];
+    for (const base of stemVariants(stem)) {
+      if (IRREGULAR[base] && idx[IRREGULAR[base]]) return idx[IRREGULAR[base]];
+      const cands = [base + '다', base + '하다', base];
+      if (/하$/.test(base)) cands.push(base.slice(0, -1) + '하다');
+      for (const c of cands) if (idx[c]) return idx[c];
+    }
+    return null;
+  }
+
+  /* look a single token up; returns { entry, via } or null */
+  function lookup(raw) {
+    const idx = build();
+    const w = clean(raw).replace(/[.,?!。，？！"'()\[\]]+$/g, '');
+    if (!w) return null;
+    if (/^\d+$/.test(w)) return { entry: { ko: w, zh: '数字', lesson: 0, src: 'extra' }, via: 'number' };
+    if (idx[w]) return { entry: idx[w], via: 'exact' };
+
+    const forms = w === uncontracted(w) ? [w] : [w, uncontracted(w)];
+    const plain = findVerb(w);
+    if (plain) return { entry: plain, via: 'bare' };
+    if (w === '해' || w === '해요') {
+      const v = findVerb('하');
+      if (v) return { entry: v, via: 'ending' };
+    }
+
+    for (const form of forms) {
+      for (const j of JOSA) {
+        if (form.length > j.length && form.endsWith(j)) {
+          const stem = form.slice(0, -j.length);
+          if (idx[stem]) return { entry: idx[stem], via: 'stem', suffix: j };
+          const v = findVerb(stem);
+          if (v) return { entry: v, via: 'stem', suffix: j };
+        }
+      }
+      for (const e of ENDINGS) {
+        if (form.length > e.length && form.endsWith(e)) {
+          const stem = form.slice(0, -e.length);
+          /* a verbal ending means the stem is a verb: 전화해 -> 전화하다, not 전화 */
+          const v = findVerb(stem);
+          if (v) return { entry: v, via: 'ending', suffix: e };
+          if (idx[stem]) return { entry: idx[stem], via: 'ending', suffix: e };
+        }
+      }
+    }
+    return null;
+  }
+
+  /* whole-sentence analysis, used by the 사전 page */
+  function analyze(sentence) {
+    const out = [];
+    for (const t of YK.tokens(sentence)) {
+      if (t.kind === 'space') { out.push({ kind: 'space' }); continue; }
+      if (t.kind === 'punct') { out.push({ kind: 'punct', text: t.text }); continue; }
+      const hit = lookup(t.text);
+      out.push({
+        kind: 'word',
+        text: t.text,
+        entry: hit ? hit.entry : null,
+        guessed: hit ? false : false,
+        unknown: !hit,
+      });
+    }
+    return out;
+  }
+
+  const all = () => Object.values(build());
+  const size = () => Object.keys(build()).length;
+
+  YK.dict = { lookup, analyze, all, size, build,
+    _dbg: { uncontracted, findVerb, stemVariants, ENDINGS, JOSA } };
+})();

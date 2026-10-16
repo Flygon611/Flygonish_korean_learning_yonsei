@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# editors
+.vscode/
+.idea/
+*.swp
+
+# python
+__pycache__/
+*.pyc
+.venv/
+
+# scraped page cache used by tools/build_corpus.py
+/tmp-cache/
+*.html.cache

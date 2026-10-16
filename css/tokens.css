@@ -1,0 +1,99 @@
+/* ------------------------------------------------------------------ tokens
+   One source of truth for colour, space, type and — importantly — motion.
+   Every animation in the app pulls its curve and duration from here so the
+   whole thing feels like one object rather than eight pages. */
+
+:root {
+  /* colour ------------------------------------------------------------- */
+  --paper:      #f6f4f1;
+  --paper-2:    #efece7;
+  --surface:    #ffffff;
+  --surface-2:  #faf9f7;
+  --ink:        #191817;
+  --ink-2:      #3d3a36;
+  --muted:      #77726b;
+  --faint:      #a9a49c;
+  --line:       #e4e0d9;
+  --line-2:     #d3cec5;
+
+  --accent:     #5a51c6;
+  --accent-2:   #4a41b4;
+  --accent-ink: #ffffff;
+  --accent-soft:#eceafb;
+  --warm:       #c86a35;
+  --warm-soft:  #fbeade;
+  --good:       #2c8a5f;
+  --good-soft:  #e2f2e9;
+  --bad:        #c1453c;
+  --bad-soft:   #fbe6e4;
+
+  --shadow-1: 0 1px 2px rgba(25, 24, 23, .05), 0 1px 1px rgba(25, 24, 23, .04);
+  --shadow-2: 0 4px 14px rgba(25, 24, 23, .07), 0 1px 3px rgba(25, 24, 23, .05);
+  --shadow-3: 0 18px 48px rgba(25, 24, 23, .16), 0 4px 14px rgba(25, 24, 23, .10);
+
+  /* space -------------------------------------------------------------- */
+  --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
+  --s5: 24px; --s6: 32px; --s7: 48px; --s8: 64px;
+
+  --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 22px; --r-full: 999px;
+
+  /* type ---------------------------------------------------------------
+     One sans stack for the interface, one serif stack for the material
+     being studied and for headings. Latin comes from the system, Chinese
+     from Noto Sans/Serif SC, Korean from Noto Sans/Serif KR — all four
+     bundled and subsetted locally. */
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", "YK Sans SC", "YK Sans KR",
+          "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+          "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-serif: Georgia, "Times New Roman", "YK Serif SC", "YK Serif KR",
+          "Songti SC", "SimSun", "Apple SD Gothic Neo", "Malgun Gothic", serif;
+  --font-ko: "YK Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-ko-serif: "YK Serif KR", Georgia, "Apple SD Gothic Neo",
+          "Malgun Gothic", serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+
+  /* motion ------------------------------------------------------------- */
+  --ease-out:    cubic-bezier(.23, 1, .32, 1);     /* entering / exiting */
+  --ease-in-out: cubic-bezier(.77, 0, .175, 1);    /* moving on screen   */
+  --ease-drawer: cubic-bezier(.32, .72, 0, 1);     /* sheets, drawers    */
+  --ease-soft:   cubic-bezier(.4, 0, .2, 1);       /* colour, shadow     */
+
+  --d-press: 120ms;
+  --d-fast:  160ms;
+  --d-base:  220ms;
+  --d-slow:  320ms;
+  --d-flip:  520ms;
+
+  --sidebar-w: 236px;
+  --topbar-h: 56px;
+}
+
+html[data-theme="dark"] {
+  --paper:      #131316;
+  --paper-2:    #191920;
+  --surface:    #1c1c22;
+  --surface-2:  #23232b;
+  --ink:        #f0eee9;
+  --ink-2:      #d3d0ca;
+  --muted:      #9c978f;
+  --faint:      #6f6a63;
+  --line:       #2e2e37;
+  --line-2:     #3b3b46;
+
+  --accent:     #8f87f0;
+  --accent-2:   #a49df5;
+  --accent-ink: #17161f;
+  --accent-soft:#2a2740;
+  --warm:       #e08a56;
+  --warm-soft:  #3a2a1f;
+  --good:       #5fbf90;
+  --good-soft:  #1c2f26;
+  --bad:        #e5766c;
+  --bad-soft:   #381f1e;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, .4);
+  --shadow-2: 0 4px 14px rgba(0, 0, 0, .45);
+  --shadow-3: 0 18px 48px rgba(0, 0, 0, .55);
+}
