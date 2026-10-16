@@ -136,8 +136,16 @@
   color: var(--accent); font-family: var(--font-ko);
   transform: translate(-50%, -50%);
   transition: transform 1150ms var(--ease-in-out);
-  will-change: transform;
+  will-change: transform, opacity;
 }
+/* a letter the new form needs: waits above-left, small and invisible, then
+   drops in — staggered left to right by the caller */
+.mflyer.is-add {
+  opacity: 0;
+  transform: translate(-50%, -50%) translate(-.3em, -1.15em) scale(.6);
+}
+/* a letter the new form does not need: slips away */
+.mflyer.is-out { transition: transform 520ms var(--ease-out), opacity 420ms var(--ease-soft); }
 
 /* the curved arrow pointing from the old slot to the new one */
 .marrow {

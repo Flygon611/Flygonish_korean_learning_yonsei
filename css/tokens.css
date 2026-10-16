@@ -55,7 +55,9 @@
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
 
   /* motion ------------------------------------------------------------- */
-  --ease-out:    cubic-bezier(.23, 1, .32, 1);     /* entering / exiting */
+  --ease-out:    cubic-bezier(.23, 1, .32, 1);
+    /* a touch of overshoot, for letters dropping into place */
+    --ease-back: cubic-bezier(.22, 1.35, .36, 1);     /* entering / exiting */
   --ease-in-out: cubic-bezier(.77, 0, .175, 1);    /* moving on screen   */
   --ease-drawer: cubic-bezier(.32, .72, 0, 1);     /* sheets, drawers    */
   --ease-soft:   cubic-bezier(.4, 0, .2, 1);       /* colour, shadow     */

@@ -223,22 +223,6 @@
     return { box, letters };
   }
 
-  /* pair the letters up: what leaves, what travels, what arrives */
-  function match(oldL, newL) {
-    const taken = new Set();
-    const moves = [];
-    for (const o of oldL) {
-      let idx = newL.findIndex((n, i) => !taken.has(i) && n.glyph === o.glyph && n.role === o.role);
-      if (idx < 0) idx = newL.findIndex((n, i) => !taken.has(i) && n.glyph === o.glyph);
-      if (idx >= 0) { taken.add(idx); moves.push([o, newL[idx]]); }
-    }
-    return {
-      moves,
-      leaves: oldL.filter((o) => !moves.some((m) => m[0] === o)),
-      arrives: newL.filter((n, i) => !taken.has(i)),
-    };
-  }
-
   const CENTRE = 'translate(-50%, -50%)';
   const rowFontSize = (row) => parseFloat(getComputedStyle(row).fontSize) || 44;
 
@@ -304,7 +288,11 @@
       if (idx < 0) idx = newL.findIndex((n, i) => !taken.has(i) && n.glyph === o.glyph);
       if (idx >= 0) { taken.add(idx); moves.push([o, newL[idx]]); }
     }
-    return moves;
+    return {
+      moves,
+      gone: oldL.filter((o) => !moves.some((m) => m[0] === o)),
+      added: newL.filter((n, i) => !taken.has(i)),
+    };
   }
 
   const glyphed = (ch) => h('span', { class: 'msyl', 'data-ch': ch }, ch);
@@ -361,11 +349,10 @@
       root.appendChild(stage);
       if (t.size) stage.style.fontSize = t.size + 'px';
 
-      // work out what travels — driven by the real letters, not by whole syllables
+      // what travels, what disappears and what is new — decided letter by letter
       const oldL = positionsIn(midFrom.join(''), prefix);
       const newL = positionsIn(midTo.join(''), prefix);
-      const moves = planMoves(oldL, newL)
-        .filter(([o, n]) => Math.hypot((n.cell - o.cell) * W + (n.x - o.x), (n.y - o.y) * H) > 0.42);
+      const { moves, gone, added } = planMoves(oldL, newL);
 
       if (still) {                                   // reduced motion: just answer
         fromRow.remove();
@@ -384,38 +371,68 @@
         const fs = rowFontSize(fromRow);
         const ox = rowBox.left - host.left, oy = rowBox.top - host.top;
 
-        const flyers = moves.map(([o, n]) => {
-          const el = h('span', {
-            class: 'mflyer', 'data-role': o.role,
-            style: {
-              left: (ox + (o.cell + o.x) * W * fs) + 'px',
-              top: (oy + o.y * H * fs) + 'px',
-              fontSize: (o.size * fs) + 'px',
-            },
-          }, o.glyph);
-          stage.appendChild(el);
-          return { el, o, n };
+        const place = (L) => ({
+          left: (ox + (L.cell + L.x) * W * fs) + 'px',
+          top: (oy + L.y * H * fs) + 'px',
+          fontSize: (L.size * fs) + 'px',
         });
+        const make = (L, cls) => {
+          const el = h('span', Object.assign({ class: 'mflyer ' + cls, 'data-role': L.role }, {}),
+            L.glyph);
+          Object.assign(el.style, place(L));
+          stage.appendChild(el);
+          return el;
+        };
+
+        /* Letters that keep their place but whose syllable is only partly
+           different are the ones worth showing: an added 받침 slides in, a
+           dropped one slips away. A syllable that is wholly new or wholly gone
+           is left to the cross-fade, so this never turns into a pile of
+           loose jamo. */
+        // cell indexes are row coordinates, so the cut-off has to include the prefix
+        const paired = prefix + Math.min(midFrom.length, midTo.length);
+        const travel = ([o, n]) =>
+          Math.hypot((n.cell - o.cell) * W + (n.x - o.x), (n.y - o.y) * H) > 0.42;
+        // a letter that keeps its slot is already drawn by both words — a flyer
+        // for it would just be a ghost sitting on top of the syllable
+        const mover = moves.filter(travel).map(([o, n]) => ({ el: make(o, 'is-moving'), o, n }));
+        const leaving = gone.filter((o) => o.cell < paired).map((o) => ({ el: make(o, 'is-out'), o }));
+        const entering = added.filter((n) => n.cell < paired)
+          .sort((a, b) => (a.cell + a.x) - (b.cell + b.x))
+          .map((n, i) => ({ el: make(n, 'is-add'), n, i }));
 
         fromRow.style.opacity = '0';                // the rest of the old word fades
         toRow.style.opacity = '1';                  // …into the finished one
 
-        if (flyers.length) {
-          const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-          svg.setAttribute('class', 'marrow');
-          root.appendChild(svg);
-          const arrows = flyers.map(({ o, n }) => ({
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', 'marrow');
+        root.appendChild(svg);
+        const arrows = mover
+          .map(({ o, n }) => ({
             x1: (o.cell + o.x) * W * fs, y1: o.y * H * fs,
             x2: (n.cell + n.x) * W * fs, y2: n.y * H * fs,
           }));
-          drawArrows(svg, root, arrows, rowBox, fs);
-        }
+        if (arrows.length) drawArrows(svg, root, arrows, rowBox, fs);
+        else svg.remove();
 
         requestAnimationFrame(() => requestAnimationFrame(() => {
-          for (const { el, o, n } of flyers) {
+          for (const { el, o, n } of mover) {
             const dx = ((n.cell + n.x) - (o.cell + o.x)) * W * fs;
             const dy = ((n.y - o.y) * H) * fs;
             el.style.transform = 'translate(-50%, -50%) translate(' + dx + 'px, ' + dy + 'px)';
+          }
+          for (const { el, o } of leaving) {
+            el.style.transform = 'translate(-50%, -50%) translate(' +
+              (o.role === 'jong' || o.role === 'jong2' ? 0 : -0.5 * fs) + 'px, ' +
+              (o.role === 'cho' ? -0.9 : 0.9) * fs + 'px) scale(.7)';
+            el.style.opacity = '0';
+          }
+          /* added letters drop in one after another, left to right */
+          for (const { el, n, i } of entering) {
+            el.style.transition = 'transform 560ms var(--ease-back) ' + (i * 80) + 'ms, ' +
+              'opacity 340ms var(--ease-soft) ' + (i * 80) + 'ms';
+            el.style.transform = 'translate(-50%, -50%)';
+            el.style.opacity = '1';
           }
           toRow.classList.remove('is-incoming');
         }));

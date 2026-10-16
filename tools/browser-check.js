@@ -95,8 +95,22 @@ const EDGE = '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge';
   ok('词条页有十种变形', wd.rows === 10, String(wd.rows));
   ok('词条页有课文例句', wd.ex > 0, String(wd.ex));
   await click('#view .conj__morph');
-  await new Promise((r) => setTimeout(r, 400));
-  ok('变形可以拆开', await page.evaluate(() => !!document.querySelector('#view .mrow')));
+  await new Promise((r) => setTimeout(r, 900));
+  const anim = await page.evaluate(() => {
+    const st = document.querySelector('#view .conj__stage');
+    return {
+      rows: st.querySelectorAll('.mrow').length,
+      marked: st.querySelectorAll('.is-marked').length,
+      added: st.querySelectorAll('.mflyer.is-add').length,
+      ghosts: st.querySelectorAll('.mflyer.is-moving').length,
+    };
+  });
+  ok('变形动画有两行词', anim.rows === 2, JSON.stringify(anim));
+  ok('变化音节被框出', anim.marked > 0, JSON.stringify(anim));
+  /* 배우다 -> 배웁니다 adds a 받침: it must drop in, not just appear */
+  ok('新加的字母有滑入', anim.added > 0, JSON.stringify(anim));
+  /* letters that keep their slot must NOT get a flyer ghost */
+  ok('未移动的字母没有多余替身', anim.ghosts === 0, JSON.stringify(anim));
   await page.screenshot({ path: '/tmp/shots/live-word.png' });
 
   console.log('布局');
