@@ -11,6 +11,10 @@ Nothing here runs at page load; this is a build-time helper.
 import re, html, json, glob, os, sys, collections
 
 RAW_GLOB = sys.argv[1] if len(sys.argv) > 1 else '/tmp/ys/raw/*.html'
+# "@tools/corpus-sources.txt" pins the exact set of mirror pages to use: the cache
+# holds two different editions under identical titles, so "which files happen to
+# be present" must not decide the output.
+SOURCE_LIST = (sys.argv[1][1:] if len(sys.argv) > 1 and sys.argv[1].startswith('@') else None)
 OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'js', 'data', 'lessons.js')
 
@@ -74,6 +78,20 @@ def split_ko_zh(line):
 
 def norm(s):
     return re.sub(r'\s+', ' ', s).strip()
+
+def looks_like_sentence(ko):
+    """Is this the Korean half of an example, or a quoted word inside a Chinese
+    explanation? Both split at the first Chinese character, so the shape of the
+    Korean half has to decide:
+
+        이 책이 사전입니까? 这本书是词典吗？   -> example
+        “이다”不可以单独放在句子的末尾…        -> explanation (ko half is “이다”)
+    """
+    if not ko or not HANGUL.search(ko):
+        return False
+    if ko[0] in '\u201c\u201d"\'\u300c\u300e':
+        return False
+    return (' ' in ko.strip()) or ko.rstrip()[-1:] in '.!?'
 
 HANGUL = re.compile(r'[\uac00-\ud7a3]')
 
@@ -198,6 +216,11 @@ def parse_vocab(lines):
 # glued to a noun ('1년 전에', '10분 전에') -- those are example sentences.
 NUM_HEAD = re.compile(r'^(\d{1,2})(?:\s*[.)]\s*|\s+)(\S.*)$')
 DASH_HEAD = re.compile(r'^([-~][^\s].*)$')
+NUM_POINT = re.compile(r'^(\d{1,2})\s*[.、)]\s*(.+)$')
+# a sub-point can also be a lone starred label: "*이" / "*그" / "*저"
+STAR_POINT = re.compile(r'^\*\s*(\S{1,6})\s*$')
+# "나--＞내+가  내가 말했습니다. 我说了。" is a form note, not an example
+FORM_NOTE = re.compile(r'(--?[>＞]|→|⇒)')
 
 def is_grammar_head(ln):
     """A block opener is short: a numbered label or a '-pattern'."""
@@ -218,6 +241,23 @@ def grammar_head_pattern(ln):
     return (m.group(2) if m else ln).strip()
 
 def parse_grammar(lines):
+    """Split a grammar block into its numbered sub-points.
+
+    The textbook explains a pattern in up to three numbered points, and EACH
+    point has its own 例句 list:
+
+        -은/는
+        1. 用于体词后面的助词…          <- point 1 explanation
+        例句： 서울은 한국의 수도입니다…
+        2. 有时，表示对比或强调。        <- point 2 explanation
+        例句： 동생은 키가 큽니다…
+        3. “은/는”可以和所有助词结合…    <- point 3 explanation
+        例句： 도서관에는 언제 갔습니까?
+
+    Treating the body as one flat "explain + examples" pair swallowed points 2
+    and 3: point 3 was spliced into an example whose Korean half read
+    `3. “은/는”`. Hence the sub-points.
+    """
     blocks, cur = [], None
     for ln in lines:
         if is_grammar_head(ln):
@@ -230,29 +270,66 @@ def parse_grammar(lines):
             cur = {'pattern': '', 'body': [ln]}
     if cur:
         blocks.append(cur)
+
     out = []
     for b in blocks:
-        body = b['body']
-        expl, ex_lines, seen_ex = [], [], False
-        for ln in body:
-            if re.match(r'^例\s*句\s*[:：]?', ln):
-                seen_ex = True
+        segments, lead = [], {'n': None, 'label': None, 'explain': [], 'ex': [], 'seen_ex': False}
+        active = lead
+        for ln in b['body']:
+            m = NUM_POINT.match(ln)
+            star = STAR_POINT.match(ln)
+            if star:
+                segments.append(active)
+                active = {'n': None, 'label': star.group(1), 'explain': [], 'ex': [], 'seen_ex': False}
+                continue
+            if m and re.search('[' + CJK + ']', m.group(2)):
+                segments.append(active)
+                active = {'n': int(m.group(1)), 'label': None,
+                          'explain': [m.group(2)], 'ex': [], 'seen_ex': False}
+                continue
+            if FORM_NOTE.search(ln):
+                # a note about how a form is built, not a sentence to learn
+                active['explain'].append(ln)
+                continue
+            lbl = re.match(r'^例\s*句\s*[:：]?', ln)
+            if lbl:
+                active['seen_ex'] = True
                 rest = re.sub(r'^例\s*句\s*[:：]?', '', ln).strip()
                 if rest:
-                    ex_lines.append(rest)
+                    active['ex'].append(rest)
                 continue
-            if not seen_ex and HANGUL.search(ln) and not re.search('[' + CJK + ']', ln):
-                # no 【例句】 label: examples begin at the first korean line
-                seen_ex = True
-            (ex_lines if seen_ex else expl).append(ln)
-        examples = pairs_to_examples(ex_lines)
-        pattern = b['pattern'] or (examples and '') or ''
+            # Some blocks (e.g. -이/그/저) have no 例句 label at all: a line that
+            # splits cleanly into Korean + Chinese IS an example.
+            ko, zh = split_ko_zh(ln)
+            if ko and zh and looks_like_sentence(ko):
+                active['seen_ex'] = True
+                active['ex'].append(ln)
+                continue
+            if not active['seen_ex'] and HANGUL.search(ln) and not re.search('[' + CJK + ']', ln):
+                # otherwise examples start at the first korean-only line
+                active['seen_ex'] = True
+            (active['ex'] if active['seen_ex'] else active['explain']).append(ln)
+        segments.append(active)
+
+        points = []
+        for seg in segments:
+            ex = pairs_to_examples(seg['ex'])
+            text = norm(' '.join(seg['explain']))
+            if not text and not ex:
+                continue
+            points.append({'n': seg['n'], 'label': seg.get('label'),
+                           'explain': text, 'examples': ex})
+
+        pattern = b['pattern']
+        all_ex = [e for pt in points for e in pt['examples']]
         out.append({
             'pattern': re.sub(r'\d+$', '', pattern).strip() or pattern,
-            'explain': norm(' '.join(expl)),
-            'examples': examples,
+            'explain': norm(' '.join(pt['explain'] for pt in points if pt['explain'])),
+            'points': points,
+            'examples': all_ex,
         })
     return [b for b in out if b['pattern'] or b['examples']]
+
 
 def pairs_to_examples(lines):
     ex, i = [], 0
@@ -307,7 +384,14 @@ TITLE_RE = re.compile(r'延世韩国语新版1\s*第\s*(\d+)\s*课\s*[- ]?\s*([^
 
 def main():
     best = {}
-    for fn in sorted(glob.glob(RAW_GLOB), key=lambda f: int(re.sub(r'\D', '', os.path.basename(f)) or 0)):
+    if SOURCE_LIST:
+        base = os.path.dirname(os.path.abspath(__file__))
+        names = [l.strip() for l in open(os.path.join(base, os.path.basename(SOURCE_LIST)), encoding='utf-8')
+                 if l.strip() and not l.startswith('#')]
+        files = ['/tmp/ys/raw/' + n for n in names]
+    else:
+        files = glob.glob(RAW_GLOB)
+    for fn in sorted(files, key=lambda f: int(re.sub(r'\D', '', os.path.basename(f)) or 0)):
         raw = open(fn, 'rb').read()
         if len(raw) < 3000:
             continue

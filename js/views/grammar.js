@@ -20,19 +20,39 @@
     return out;
   }
 
+  /* one example sentence, with every word tappable */
+  function exRow(e) {
+    return h('div', { class: 'gex' },
+      h('div', {},
+        h('div', { class: 'gex__ko' }, ui.koreanWords(e.ko, (raw, anchor) => {
+          const hit = YK.dict.lookup(raw);
+          const entry = hit && hit.entry;
+          ui.popover(anchor, ui.wordPop(entry, raw, h('a', {
+            class: 'btn btn--sm', href: '#/lookup?q=' + encodeURIComponent(e.ko),
+          }, '拆整句')));
+        })),
+        e.zh ? h('div', { class: 'gex__zh' }, e.zh) : null),
+      YK.tts.button(e.ko));
+  }
+
+  /* A pattern is explained in up to three numbered points and each point has
+     its own examples — losing that structure is what made point 2 vanish and
+     point 3 turn up as an example sentence. */
   function pointCard(p, index) {
-    const ex = h('div', { class: 'gcard__ex' }, (p.examples || []).slice(0, 6).map((e) =>
-      h('div', { class: 'gex' },
-        h('div', {},
-          h('div', { class: 'gex__ko' }, ui.koreanWords(e.ko, (raw, anchor) => {
-            const hit = YK.dict.lookup(raw);
-            const entry = hit && hit.entry;
-            ui.popover(anchor, ui.wordPop(entry, raw, h('a', {
-              class: 'btn btn--sm', href: '#/lookup?q=' + encodeURIComponent(e.ko),
-            }, '拆整句')));
-          })),
-          e.zh ? h('div', { class: 'gex__zh' }, e.zh) : null),
-        YK.tts.button(e.ko))));
+    const pts = (p.points && p.points.length)
+      ? p.points
+      : [{ n: null, label: null, explain: p.explain, examples: p.examples || [] }];
+
+    const ex = h('div', { class: 'gcard__ex' }, pts.map((pt) => {
+      const tag = pt.n ? String(pt.n) + '.' : (pt.label || '');
+      return h('div', { class: 'gpoint' },
+        pt.explain
+          ? h('p', { class: 'gpoint__h' }, tag ? h('b', { class: 'gpoint__n' }, tag) : null, pt.explain)
+          : null,
+        (pt.examples || []).map(exRow));
+    }));
+
+    const lead = (pts.find((pt) => pt.explain) || {}).explain || '';
 
     const body = h('div', { class: 'rule__body' }, h('div', { class: 'rule__inner' },
       h('div', { class: 'rule__pad' },
@@ -46,9 +66,12 @@
         h('span', {},
           h('div', { class: 'row', style: { gap: '8px', alignItems: 'baseline' } },
             h('span', { class: 'gcard__pat' }, p.pattern || '（未标注）'),
-            ui.chip('第 ' + p.lesson + ' 课 · ' + p.section + ' 节', 'chip--acc')),
+            ui.chip('第 ' + p.lesson + ' 课 · ' + p.section + ' 节', 'chip--acc'),
+            pts.filter((pt) => pt.n || pt.label).length > 1
+              ? ui.chip(pts.filter((pt) => pt.n || pt.label).length + ' 个用法', 'chip--soft')
+              : null),
           h('p', { style: { fontSize: '13px', lineHeight: '1.75', color: 'var(--muted)', marginTop: '8px' } },
-            p.explain.length > 96 ? p.explain.slice(0, 96) + '…' : p.explain)),
+            lead.length > 96 ? lead.slice(0, 96) + '…' : lead)),
         h('span', { class: 'rule__chev' }, '›')),
       body);
 

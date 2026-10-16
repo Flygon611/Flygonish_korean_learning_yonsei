@@ -328,3 +328,9 @@
 .pair__stage { padding: var(--s2) 0 var(--s3); }
 .pair__stage .morph2 { min-height: 108px; }
 .pair__stage .mrow { font-size: 40px; }
+
+/* grammar: numbered sub-points inside one pattern */
+.gpoint + .gpoint { margin-top: var(--s4); padding-top: var(--s4); border-top: 1px dashed var(--line); }
+.gpoint__h { font-size: 13.5px; line-height: 1.8; color: var(--ink-2); margin-bottom: var(--s2); }
+.gpoint__n { display: inline-block; min-width: 1.6em; color: var(--accent);
+  font-family: var(--font-ko-serif); margin-right: 4px; }

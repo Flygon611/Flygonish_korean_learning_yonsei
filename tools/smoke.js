@@ -282,6 +282,31 @@ go('#/vocab?mode=flash');
       'speak calls did not increase');
   }
 
+  /* A grammar pattern is explained in numbered points. Treating the body as one
+     flat block made point 2 disappear and point 3 show up as an example whose
+     Korean half read `3. “은/는”`. */
+  go('#/grammar?l=1');
+  const g = window.YK_LESSONS.lessons[0].sections[0].grammar.find((x) => x.pattern === '-은/는');
+  check('grammar: numbered sub-points survive parsing',
+    g && g.points && g.points.filter((p) => p.n).length === 3,
+    g && g.points && g.points.map((p) => p.n).join(','));
+  check('grammar: every point keeps its own explanation',
+    g.points.every((p) => (p.explain || '').length > 4));
+  check('grammar: point 2 is not lost',
+    g.points.some((p) => p.explain.indexOf('对比') >= 0));
+  check('grammar: point 3 is not an example sentence',
+    !g.examples.some((e) => e.ko.indexOf('3.') === 0 || /[\u4e00-\u9fff]/.test(e.ko)),
+    JSON.stringify(g.examples.slice(4, 6).map((e) => e.ko)));
+  {
+    let bad = 0, empty = 0;
+    for (const L of window.YK_LESSONS.lessons) for (const sec of L.sections) for (const gg of sec.grammar) {
+      if (!gg.explain) empty++;
+      for (const e of gg.examples) if (/[\u4e00-\u9fff]/.test(e.ko) || /^\d{1,2}\s*[.、)]/.test(e.ko)) bad++;
+    }
+    check('grammar: no example is really a Chinese explanation', bad === 0, bad + ' bad');
+    check('grammar: no pattern is left without an explanation', empty === 0, empty + ' empty');
+  }
+
   // 3. conjugation is reachable and complete
   const c = YK.conj.conjugate('먹다');
   check('conj: a verb produces all ten forms', c && c.forms.length === 10, c && c.forms.length);
