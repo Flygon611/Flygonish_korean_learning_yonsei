@@ -299,6 +299,14 @@ go('#/vocab?mode=flash');
     [...parts].map((p) => p.textContent).join(''));
   check('hangulAnim: no-jong syllable has two letters',
     YK.hangulAnim.cell('더').querySelectorAll('.hpart').length === 2);
+  /* A 겹받침 is two consonants, and that is what makes 앉아요 -> 안자요 work:
+     the ㅈ must be able to leave. One glyph would lose the rule. */
+  const ank = YK.hangulAnim.lettersOf('앉').map((l) => l.glyph).join('');
+  check('hangulAnim: a double 받침 is split into two letters', ank === 'ㅇㅏㄴㅈ', ank);
+  check('hangulAnim: a single 받침 stays one letter',
+    YK.hangulAnim.lettersOf('안').map((l) => l.glyph).join('') === 'ㅇㅏㄴ');
+  check('hangulAnim: letters carry their own drawn size',
+    YK.hangulAnim.lettersOf('앉').every((l) => l.size > 0));
   check('hangulAnim: aligns the unchanged part',
     JSON.stringify(YK.hangulAnim.align([...'한국어'], [...'한구거'])) ===
       JSON.stringify({ prefix: 1, suffix: 0 }));

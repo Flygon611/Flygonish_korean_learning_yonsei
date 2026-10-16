@@ -116,6 +116,8 @@
 
 /* the word as it normally looks */
 .msyl {
+  position: relative;                 /* must not depend on .msyl--open: the
+                                         letters would jump when it is removed */
   display: inline-block; width: 1em; height: 1.32em;
   text-align: center; line-height: 1.32em;
   border-radius: .18em;
@@ -129,19 +131,37 @@
 }
 .morph2.is-done .is-target { outline-color: transparent; background: transparent; }
 
-.msyl--open { position: relative; background: transparent; color: transparent; }
+.msyl--open { background: transparent; color: transparent; }
 .msyl--open.is-target { background: color-mix(in srgb, var(--accent) 7%, transparent); }
-.msyl--open .mletter { position: absolute; }
+
+/* the composed syllable stays put underneath and dissolves as the letters
+   arrive, so the eye never sees the arrangement "jump" */
+.msyl__glyph {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  color: var(--ink);
+  /* the finished glyph appears only after the letters have started leaving,
+     otherwise the two overlap and read as a double exposure */
+  transition: opacity 380ms var(--ease-soft) 150ms, color 300ms var(--ease-soft);
+}
+.msyl--open .msyl__glyph { opacity: 0; transition: opacity 220ms var(--ease-soft); }
 
 /* a single letter, positioned by its centre */
 .mletter {
-  position: absolute; font-size: .72em; line-height: 1;
+  position: absolute; line-height: 1;   /* size comes from the composition box */
   color: var(--accent); transform: translate(-50%, -50%);
-  transition: transform 1000ms var(--ease-in-out), opacity 420ms var(--ease-soft);
+  opacity: 0;
+  transition: transform 1000ms var(--ease-in-out), opacity 300ms var(--ease-soft);
   will-change: transform;
 }
+.msyl--open .mletter { opacity: 1; transition-delay: 90ms; }
 .mletter.is-arriving { opacity: 0; }
-.morph2.is-done .mletter { color: var(--ink); }
+.mletter.is-arriving.is-seated { opacity: 1; }
+.morph2.is-done .mletter, .morphroot.is-done .mletter { color: var(--ink); }
+
+/* the word that replaces a differently-shaped mid section fades in */
+.msyl.is-in { animation: msyl-in 420ms var(--ease-out) both; }
+@keyframes msyl-in { from { opacity: 0; } to { opacity: 1; } }
 
 /* the curved arrow that points from the old slot to the new one */
 .marrow {
@@ -163,8 +183,7 @@
 }
 .hpart {
   position: absolute; line-height: 1;
-  font-family: var(--font-ko-serif);
-  font-size: .68em;
+  font-family: var(--font-ko);
   transform: translate(-50%, -50%);
   transition: transform 240ms var(--ease-out), opacity 200ms var(--ease-soft);
 }
