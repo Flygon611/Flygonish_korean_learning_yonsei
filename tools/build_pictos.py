@@ -79,36 +79,70 @@ def diagram(name, body):
     return card(body)
 
 
-BOX = '<rect x="18" y="22" width="28" height="20" rx="3" fill="%s" stroke="%s" stroke-width="1.6"/>' % (SOFT, INK)
-DOT = '<circle cx="32" cy="32" r="4.2" fill="%s"/>' % ACCENT
-UP = '<path d="M32 12 l6 8 h-12 z" fill="%s"/>' % ACCENT
-DOWN = '<path d="M32 52 l6 -8 h-12 z" fill="%s"/>' % ACCENT
+# ---------------------------------------------------------------- a cube
+# A flat rectangle could not tell 안 from 옆 — a dot in a box and a dot beside a
+# box look nearly the same. An isometric cube gives the ball somewhere to be:
+# on top, underneath, in front, behind, inside, beside.
+
+TOP_FILL = '#dfe6f7'
+LEFT_FILL = '#c3cff0'
+RIGHT_FILL = '#a8b8e6'
+EDGE = '#5a6a94'
+
+
+def cube(cx, cy, s, open_=False):
+    """An isometric cube. `open_` leaves the solid faces off so a ball drawn
+    inside it still shows — that is the whole picture for 안."""
+    w, h = s * 0.87, s * 0.5
+    top = 'M %.1f %.1f L %.1f %.1f L %.1f %.1f L %.1f %.1f Z' % (
+        cx, cy - s, cx + w, cy - h, cx, cy, cx - w, cy - h)
+    left = 'M %.1f %.1f L %.1f %.1f L %.1f %.1f L %.1f %.1f Z' % (
+        cx - w, cy - h, cx, cy, cx, cy + s, cx - w, cy + h)
+    right = 'M %.1f %.1f L %.1f %.1f L %.1f %.1f L %.1f %.1f Z' % (
+        cx, cy, cx + w, cy - h, cx + w, cy + h, cx, cy + s)
+    if open_:
+        return ('<path d="%s" fill="none" stroke="%s" stroke-width="1.2"/>' % (top, EDGE)
+                + '<path d="%s" fill="none" stroke="%s" stroke-width="1.2"/>' % (left, EDGE)
+                + '<path d="%s" fill="none" stroke="%s" stroke-width="1.2"/>' % (right, EDGE))
+    return ('<path d="%s" fill="%s" stroke="%s" stroke-width="1"/>' % (top, TOP_FILL, EDGE)
+            + '<path d="%s" fill="%s" stroke="%s" stroke-width="1"/>' % (left, LEFT_FILL, EDGE)
+            + '<path d="%s" fill="%s" stroke="%s" stroke-width="1"/>' % (right, RIGHT_FILL, EDGE))
+
+
+def ball(cx, cy, r, fill=None):
+    return '<circle cx="%.1f" cy="%.1f" r="%.1f" fill="%s" stroke="#fff" stroke-width="0.8"/>' % (
+        cx, cy, r, fill or ACCENT)
 
 
 def direction(name, kind):
-    if kind == 'front':
-        b = ('<rect x="20" y="30" width="24" height="18" rx="3" fill="%s" stroke="%s" stroke-width="1.6"/>'
-             % (SOFT, INK) + '<path d="M32 8 l7 10 h-14 z" fill="%s"/>' % ACCENT
-             + '<circle cx="32" cy="24" r="3.6" fill="%s"/>' % ACCENT)
-    elif kind == 'back':
-        b = (BOX + DOT + '<path d="M32 56 l7 -10 h-14 z" fill="%s"/>' % ACCENT)
-    elif kind == 'above':
-        b = (BOX + DOT + '<circle cx="32" cy="13" r="4.2" fill="%s"/>' % ACCENT
-             + '<path d="M32 20 l4 5 h-8 z" fill="%s"/>' % ACCENT)
-    elif kind == 'below':
-        b = (BOX + DOT + '<circle cx="32" cy="53" r="4.2" fill="%s"/>' % ACCENT
-             + '<path d="M32 46 l4 -5 h-8 z" fill="%s"/>' % ACCENT)
-    elif kind == 'side':
-        b = (BOX + DOT + '<circle cx="53" cy="32" r="4.2" fill="%s"/>' % ACCENT
-             + '<path d="M46 32 l-5 4 v-8 z" fill="%s"/>' % ACCENT)
-    elif kind == 'inside':
-        b = (BOX + '<circle cx="32" cy="32" r="5" fill="%s"/>' % ACCENT)
-    elif kind == 'outside':
-        b = (BOX + '<circle cx="55" cy="15" r="5" fill="%s"/>' % ACCENT
-             + '<path d="M49 21 l-4 4 6 -1 z" fill="%s"/>' % ACCENT)
-    elif kind == 'near':
-        b = (BOX + '<circle cx="52" cy="32" r="4.2" fill="%s"/>' % ACCENT
-             + '<path d="M45 32 h-6" stroke="%s" stroke-width="1.6" stroke-dasharray="2 2"/>' % ACCENT)
+    cx, cy, s, r = 33, 33, 13, 6.2
+    w, h = s * 0.87, s * 0.5
+    if kind == 'above':                       # on top of the cube
+        b = cube(cx, cy + 3, s) + ball(cx, cy + 3 - s - r + 1, r)
+    elif kind == 'below':                     # underneath
+        b = cube(cx, cy - 3, s) + ball(cx, cy - 3 + s + r - 1, r)
+    elif kind == 'front':                     # towards the viewer, lower left
+        b = cube(cx + 4, cy - 2, s) + ball(cx + 4 - w - r, cy - 2 + h + r, r)
+    elif kind == 'back':                      # peeking out from behind
+        b = ball(cx + 4 + w * 0.55, cy - 2 - h * 1.5, r, '#8d9bd0') + cube(cx + 4, cy - 2, s)
+    elif kind == 'side':                      # right of the cube, same level
+        b = cube(cx - 5, cy, s) + ball(cx - 5 + w + r + 1, cy + h * 0.4, r)
+    elif kind == 'inside':                    # the cube drawn open, ball within
+        b = cube(cx, cy, s, open_=True) + ball(cx, cy - s * 0.15, r)
+    elif kind == 'outside':                   # clearly away from it
+        b = cube(cx - 6, cy + 4, s) + ball(cx + 15, cy - 15, r)
+    elif kind == 'near':                      # in the vicinity, not touching
+        b = (cube(cx - 9, cy, s)
+             + '<path d="M %.1f %.1f a 13 13 0 0 1 13 8" fill="none" stroke="%s" '
+               'stroke-width="1.3" stroke-dasharray="2.5 2.5"/>'
+               % (cx - 9 + w, cy - 2, EDGE)
+             + ball(cx + 15, cy + 6, r))
+    elif kind.startswith('dist-'):            # 이쪽 / 그쪽 / 저쪽 differ by DISTANCE
+        d = {'dist-this': 9, 'dist-that': 17, 'dist-yon': 24}[kind]
+        b = (cube(cx - 16, cy, s * 0.8)
+             + '<path d="M %.1f 46 H %.1f" stroke="%s" stroke-width="1" '
+               'stroke-dasharray="2 2"/>' % (cx - 6, cx - 6 + d, EDGE)
+             + ball(cx - 6 + d, 46, r - 1 if d < 20 else r - 2))
     elif kind == 'left':
         b = ('<path d="M50 32 H16" stroke="%s" stroke-width="2.4"/>' % ACCENT
              + '<path d="M18 32 l9 -6 v12 z" fill="%s"/>' % ACCENT)
@@ -116,8 +150,8 @@ def direction(name, kind):
         b = ('<path d="M14 32 H48" stroke="%s" stroke-width="2.4"/>' % ACCENT
              + '<path d="M46 32 l-9 -6 v12 z" fill="%s"/>' % ACCENT)
     else:
-        b = BOX
-    return diagram(name, b)
+        b = cube(cx, cy, s)
+    return card(b)
 
 
 def main():
@@ -131,8 +165,10 @@ def main():
                    ('여섯', '6'), ('일곱', '7'), ('여덟', '8'), ('아홉', '9'), ('열', '10')]
     dirs = [('앞', 'front'), ('뒤', 'back'), ('위', 'above'), ('밑', 'below'), ('아래', 'below'),
             ('옆', 'side'), ('안', 'inside'), ('밖', 'outside'), ('근처', 'near'),
-            ('왼쪽', 'left'), ('오른쪽', 'right'), ('이쪽', 'front'), ('그쪽', 'side'),
-            ('저쪽', 'back'), ('앞쪽', 'front'), ('뒤쪽', 'back')]
+            ('왼쪽', 'left'), ('오른쪽', 'right'), ('앞쪽', 'front'), ('뒤쪽', 'back'),
+            # 이쪽 / 그쪽 / 저쪽 are about DISTANCE from the speaker, not about
+            # which side of something — drawn as near / mid / far from the cube
+            ('이쪽', 'dist-this'), ('그쪽', 'dist-that'), ('저쪽', 'dist-yon')]
 
     for ko, hz in sino_nums:
         made.append((ko, 'num-sino-' + hz, sino(ko, hz)))
