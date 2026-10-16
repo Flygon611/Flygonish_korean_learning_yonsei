@@ -63,6 +63,9 @@
     [/运动|球|跑|游泳|爬山/, 'sports'],
     [/人|朋友|见面|介绍/, 'people'],
     [/你好|问候|初次|高兴|再见/, 'hello'],
+    /* Reviewed one image at a time: the irasutoya search for ノート also returns
+       laptops, so this one was looked at before being wired up. */
+    [/笔记本|本子|册子/, 'notebook'],
   ];
 
   /* null means there is no honest picture for this word.
