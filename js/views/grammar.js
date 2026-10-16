@@ -24,7 +24,13 @@
     const ex = h('div', { class: 'gcard__ex' }, (p.examples || []).slice(0, 6).map((e) =>
       h('div', { class: 'gex' },
         h('div', {},
-          h('div', { class: 'gex__ko' }, e.ko),
+          h('div', { class: 'gex__ko' }, ui.koreanWords(e.ko, (raw, anchor) => {
+            const hit = YK.dict.lookup(raw);
+            const entry = hit && hit.entry;
+            ui.popover(anchor, ui.wordPop(entry, raw, h('a', {
+              class: 'btn btn--sm', href: '#/lookup?q=' + encodeURIComponent(e.ko),
+            }, '拆整句')));
+          })),
           e.zh ? h('div', { class: 'gex__zh' }, e.zh) : null),
         YK.tts.button(e.ko))));
 

@@ -11,23 +11,40 @@
      consonants by name: ㅂ -> 비읍). The example word gets its own small
      button, so the two are never confused. */
   function jamoButton(j, onTap) {
+    /* Tapping the letter plays the SOUND of the letter on its own. A Korean
+       consonant cannot be voiced without a vowel, so the isolated sound is the
+       consonant with ㅡ (ㄱ -> 그); the letter's name (기역) has its own button,
+       because "name" and "sound" are two different things to learn. */
+    const spoken = j.sound || j.say || j.ch;
     const letter = h('button', { class: 'jamo__main', type: 'button',
       'aria-label': '读字母 ' + j.ch + ' ' + j.ro },
       h('span', { class: 'jamo__ch' }, j.ch),
       h('span', { class: 'jamo__ro' }, j.ro),
-      j.name ? h('span', { class: 'jamo__zh' }, j.name)
-             : (j.zh ? h('span', { class: 'jamo__zh' }, j.zh) : null));
+      j.zh ? h('span', { class: 'jamo__zh' }, j.zh) : null);
     letter.addEventListener('click', () => {
-      YK.tts.speak(j.say || j.ch, letter);
+      YK.tts.speak(spoken, letter);
+      YK.anim.replay(letter, 'pop-good');
       onTap && onTap(j, letter);
     });
 
+    const tools = [];
+    if (j.name) {
+      const nameBtn = h('button', { class: 'jamo__ex', type: 'button',
+        title: '字母名称：' + j.name, 'aria-label': '读字母名称 ' + j.name },
+        h('span', { class: 'faint' }, '名 '), j.name);
+      nameBtn.addEventListener('click', () => YK.tts.speak(j.name, nameBtn));
+      tools.push(nameBtn);
+    }
     const ex = j.ex && j.ex[0];
-    const exBtn = ex ? h('button', { class: 'jamo__ex', type: 'button',
-      title: '例词：' + ex, 'aria-label': '读例词 ' + ex }, ex) : null;
-    if (exBtn) exBtn.addEventListener('click', () => YK.tts.speak(ex, exBtn));
+    if (ex) {
+      const exBtn = h('button', { class: 'jamo__ex', type: 'button',
+        title: '例词：' + ex, 'aria-label': '读例词 ' + ex },
+        h('span', { class: 'faint' }, '例 '), ex);
+      exBtn.addEventListener('click', () => YK.tts.speak(ex, exBtn));
+      tools.push(exBtn);
+    }
 
-    return h('div', { class: 'jamo' }, letter, exBtn);
+    return h('div', { class: 'jamo' }, letter, tools.length ? h('div', { class: 'jamo__tools' }, tools) : null);
   }
 
   function jamoSection(title, sub, list, slug) {

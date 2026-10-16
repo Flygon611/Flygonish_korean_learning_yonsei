@@ -303,3 +303,26 @@
 /* the study material reads as text, the interface stays sans ----------- */
 .flip__face .ko, .flip__face .ko--xl { font-family: var(--font-ko-serif); }
 .reader-hide-ko .dlg__ko { font-family: var(--font-ko-serif); }
+
+/* --------------------------------------------------------- page: 활용 */
+.conj { padding: 6px; }
+.conj__hint { font-size: 12px; padding: var(--s3) var(--s4) 0; }
+.conj__row { padding: var(--s3) var(--s4); border-radius: var(--r-md);
+  transition: background-color var(--d-fast) var(--ease-soft); }
+.conj__row:hover { background: var(--surface-2); }
+.conj__head { display: flex; align-items: center; gap: var(--s3); }
+.conj__label { font-family: var(--font-ko-serif); font-size: 14px; }
+.conj__zh { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.conj__form { font-family: var(--font-ko-serif); font-size: 19px; margin-left: auto;
+  min-width: 8ch; text-align: right; }
+.conj__stage:empty { display: none; }
+.conj__stage { margin-top: var(--s2); padding-left: var(--s2); }
+.conj__row.is-verbonly .conj__label { color: var(--muted); }
+
+/* phonetics: pair + the deconstruction stage */
+.pairwrap { display: flex; flex-direction: column; gap: 2px; }
+.pairwrap .pair { flex: 1; }
+.pair__open { flex: none; min-width: 40px; }
+.pair__stage:empty { display: none; }
+.pair__stage { padding: 2px 4px 6px; }
+.pair__stage .mrow { font-size: 26px; }

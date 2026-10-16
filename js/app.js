@@ -110,6 +110,11 @@
     });
   }
 
+  /* views reachable by link but not shown in the sidebar */
+  const EXTRA_ROUTES = [
+    { path: '/conj', view: 'conj' },
+  ];
+
   /* ------------------------------------------------------------------ boot */
   function boot() {
     initTheme();
@@ -130,6 +135,7 @@
 
     const routes = {};
     for (const item of NAV) routes[item.path] = YK.views[item.view];
+    for (const item of EXTRA_ROUTES) routes[item.path] = YK.views[item.view];
     YK.router.register(routes);
     YK.router.start(document.getElementById('view'));
     YK.store.bumpStreak();

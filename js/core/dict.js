@@ -167,31 +167,8 @@
 
   /* ---- hangul syllable surgery, for forms the ending list cannot reach ---- */
 
-  const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
-  const JUNG = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ';
-  const JONG = ' ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ';
+  const { CHO, JUNG, JONG, COMPOUND, isHangul, split, join, withLast, addJong, dropJong } = YK.jamo;
 
-  const isHangul = (c) => c >= '\uac00' && c <= '\ud7a3';
-  const split = (c) => {
-    const i = c.charCodeAt(0) - 0xac00;
-    const j = JONG[i % 28];
-    return {
-      cho: CHO[Math.floor(i / 588)],
-      jung: JUNG[Math.floor((i % 588) / 28)],
-      jong: j === ' ' ? '' : j,
-    };
-  };
-  const join = (cho, jung, jong) => String.fromCharCode(
-    0xac00 + CHO.indexOf(cho) * 588 + JUNG.indexOf(jung) * 28 + JONG.indexOf(jong || ' '));
-
-  const COMPOUND = {
-    'ㅑ': ['ㅣ', 'ㅏ'], 'ㅕ': ['ㅣ', 'ㅓ'], 'ㅛ': ['ㅣ', 'ㅗ'], 'ㅠ': ['ㅣ', 'ㅜ'],
-    'ㅒ': ['ㅣ', 'ㅐ'], 'ㅖ': ['ㅣ', 'ㅔ'], 'ㅘ': ['ㅗ', 'ㅏ'], 'ㅙ': ['ㅗ', 'ㅐ'],
-    'ㅝ': ['ㅜ', 'ㅓ'], 'ㅞ': ['ㅜ', 'ㅔ'], 'ㅢ': ['ㅡ', 'ㅣ'],
-  };
-
-  /* Expand contracted 아/어 forms back to their uncontracted spelling:
-     마셔요 -> 마시어요, 갔어요 -> 가았어요, 했어요 -> 하았어요 */
   function uncontracted(word) {
     /* Only the final syllable can carry a contraction (마시+어 -> 마셔).
        Expanding earlier syllables would mangle the rest of the word. */
@@ -230,16 +207,15 @@
     const last = stem[stem.length - 1];
     if (last && isHangul(last)) {
       const { cho, jung, jong } = split(last);
-      const withLast = (c) => stem.slice(0, -1) + c;
-      const bare = () => withLast(join(cho, jung, ''));
+      const bare = () => stem.slice(0, -1) + join(cho, jung, '');
 
       if (jong === 'ㅆ') {
         // 갔어요 -> 가다, 만났어요 -> 만나다, 마셨어요 -> 마시다, 했어요 -> 하다
-        if (COMPOUND[jung]) out.push(withLast(join(cho, COMPOUND[jung][0], '')));
+        if (COMPOUND[jung]) out.push(stem.slice(0, -1) + join(cho, COMPOUND[jung][0], ''));
         out.push(bare());
         if (jung === 'ㅐ') {
-          out.push(withLast(join(cho, 'ㅏ', '')));      // 했어요 -> 하다
-          out.push(withLast(join(cho, 'ㅓ', 'ㅎ')));    // 어땠어요 -> 어떻다
+          out.push(stem.slice(0, -1) + join(cho, 'ㅏ', ''));      // 했어요 -> 하다
+          out.push(stem.slice(0, -1) + join(cho, 'ㅓ', 'ㅎ'));    // 어땠어요 -> 어떻다
         }
       } else if (cho === 'ㅅ' && jung === 'ㅣ' && !jong) {
         out.push(stem.slice(0, -1));              // 하셨어요 -> 하다
@@ -247,12 +223,12 @@
 
       if (jong === 'ㄹ') {
         out.push(bare());                          // 갈까요 -> 가다, 살다 -> 사다
-        out.push(withLast(join(cho, jung, 'ㄷ'))); // 듣다 -> 들
+        out.push(stem.slice(0, -1) + join(cho, jung, 'ㄷ')); // 듣다 -> 들
       } else if (jong === 'ㄷ') {
-        out.push(withLast(join(cho, jung, 'ㄹ'))); // 듣다
+        out.push(stem.slice(0, -1) + join(cho, jung, 'ㄹ')); // 듣다
       } else if (jong === 'ㅂ') {
         out.push(bare());                          // 갑니다 -> 가다, 합니다 -> 하다
-        out.push(withLast(join(cho, jung, 'ㅜ'))); // ㅂ irregular -> 더워요
+        out.push(stem.slice(0, -1) + join(cho, jung, 'ㅜ')); // ㅂ irregular -> 더워요
       } else if (jong && jong !== 'ㅆ') {
         out.push(bare());                          // 탄다 -> 타다, 있니다 -> 이다
       }

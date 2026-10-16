@@ -87,3 +87,41 @@
   .flash-good { background-color: var(--good-soft); }
   .flip__inner { transition-duration: .001ms !important; }
 }
+
+/* --------------------------------------------------- hangul deconstruction
+   A syllable is three positioned pieces. Animating the pieces (not the whole
+   glyph) is what lets you see ㅂ leave and 우 arrive in 덥다 -> 더워요. */
+.hcell {
+  position: relative; display: inline-block;
+  width: 1.14em; height: 1.34em; vertical-align: middle;
+}
+.hpart {
+  position: absolute; line-height: 1;
+  font-family: var(--font-ko-serif);
+  font-size: .68em;
+  transform: translate(-50%, -50%);
+  transition: transform 240ms var(--ease-out), opacity 200ms var(--ease-soft),
+              color 200ms var(--ease-soft);
+  will-change: transform;
+}
+.hcell.is-instant .hpart { transition: none; }
+.mrow { display: flex; flex-wrap: wrap; align-items: center; font-size: 34px; }
+/* A syllable that is being taken apart gets a faint outline, so the jamo read
+   as "the letters of this box" instead of as a malformed syllable. */
+.mmid .hcell {
+  border: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: .2em; margin: 0 .06em;
+}
+/* non-Hangul (a question mark, a space) should not tower over the syllables */
+.hcell--raw { display: inline-flex; align-items: center; justify-content: center;
+  font-size: .8em; color: var(--muted); }
+.morph.is-done .mmid .hcell { border-color: var(--line-2); }
+.mmid { display: inline-flex; align-items: center; }
+.mmid .hcell .hpart { color: var(--accent); }
+.morph { min-height: 46px; display: flex; align-items: center; }
+.morph.is-done .mmid .hcell .hpart { color: var(--ink); }
+.morphwrap { display: flex; flex-direction: column; gap: var(--s2); }
+.morph__label { font-family: var(--font-ko-serif); font-size: 13px; color: var(--muted); }
+.morph__from { color: var(--muted); }
+.morph__to { color: var(--accent); font-weight: 600; }
+.morph__arrow { margin: 0 7px; color: var(--faint); }

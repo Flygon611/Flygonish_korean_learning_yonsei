@@ -8,12 +8,33 @@
   const { ui } = YK;
   const D = window.YK_PHONETICS;
 
+  /* Each pair: tap to hear it, or open it up to watch the letters that change. */
   function pairRow(it) {
-    return h('button', { class: 'pair', type: 'button', title: '点击朗读' },
+    const btn = h('button', { class: 'pair', type: 'button',
+      title: '点击朗读：' + it.from,
+      'aria-label': '朗读 ' + it.from },
       h('span', { class: 'pair__from' }, it.from),
       h('span', { class: 'pair__arrow' }, '→'),
       h('span', { class: 'pair__to' }, '[' + it.to + ']'),
       it.zh ? h('span', { class: 'faint', style: { fontSize: '11.5px', marginLeft: 'auto' } }, it.zh) : null);
+    /* The synthesizer applies the sound change on its own, so reading the
+       written form is what you want to hear. */
+    btn.addEventListener('click', () => {
+      YK.tts.speak(it.from, btn);
+      YK.anim.replay(btn, 'rise');
+    });
+
+    const stage = h('div', { class: 'pair__stage' });
+    let play = null;
+    const open = h('button', { class: 'btn btn--sm pair__open', type: 'button',
+      title: '拆开看字母怎么变' }, '拆');
+    open.addEventListener('click', () => {
+      if (!play) play = YK.hangulAnim.morph(stage, it.from, it.to);
+      else play();
+    });
+
+    return h('div', { class: 'pairwrap' },
+      h('div', { class: 'row', style: { gap: '6px' } }, btn, open), stage);
   }
 
   /* ------------------------------------------------------------- the drill */

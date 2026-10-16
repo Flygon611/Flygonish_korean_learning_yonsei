@@ -29,7 +29,11 @@ window.HTMLElement.prototype.scrollIntoView = function () {};
 if (!window.SpeechSynthesisUtterance) {
   window.SpeechSynthesisUtterance = function (t) { this.text = t; };
 }
-window.speechSynthesis = { speak() {}, cancel() {}, getVoices: () => [], addEventListener() {} };
+let _speakCalls = 0;
+window.speechSynthesis = {
+  speak() { _speakCalls++; }, cancel() {}, getVoices: () => [], addEventListener() {},
+};
+const spokenCount = () => _speakCalls;
 
 const errors = [];
 window.addEventListener('error', (e) => errors.push('window error: ' + e.message));
@@ -108,7 +112,9 @@ const routes = ['#/', '#/hangul', '#/phonetics', '#/reading?l=1&s=1', '#/vocab',
   '#/practice?mode=particle', '#/practice?mode=conjugation',
   '#/practice?mode=translate', '#/practice?mode=order',
   '#/practice?mode=pattern&l=4', '#/practice?mode=phonetics',
-  '#/lookup', '#/lookup?q=' + encodeURIComponent('저는 학생입니다.'), '#/cast'];
+  '#/lookup', '#/lookup?q=' + encodeURIComponent('저는 학생입니다.'), '#/cast',
+  '#/conj', '#/conj?w=' + encodeURIComponent('먹다'),
+  '#/conj?w=' + encodeURIComponent('덥다'), '#/conj?w=' + encodeURIComponent('아니다')];
 
 for (const r of routes) {
   const view = go(r);
@@ -246,6 +252,56 @@ go('#/vocab?mode=flash');
   await0(150);
   const txt = window.document.getElementById('view').textContent;
   check('lookup stats row has no literal "null"', !txt.includes('null'), txt.slice(0, 120));
+}
+
+/* --- 4d. the four things that were reported broken ---------------------- */
+{
+  // 1. grammar examples must be tappable, like the reading page
+  go('#/grammar?l=1');
+  const gWords = window.document.querySelectorAll('#view .gex__ko .w');
+  check('grammar: example sentences are word-tappable', gWords.length > 3, gWords.length + ' words');
+  if (gWords[0]) {
+    gWords[0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    const pop = window.document.querySelector('#popLayer .pop');
+    check('grammar: tapping a word opens an explanation', !!pop && pop.textContent.length > 2);
+    YK.closeAll();
+  }
+
+  // 2. every phonetics pair must actually be wired to speak
+  go('#/phonetics');
+  // .pairwrap wraps the rule pairs; the irregular block uses .pair without one
+  const pairs = window.document.querySelectorAll('#view .pairwrap .pair');
+  check('phonetics: pairs are rendered', pairs.length >= 40, pairs.length + ' pairs');
+  check('phonetics: each rule pair has a deconstruct button',
+    window.document.querySelectorAll('#view .pair__open').length === pairs.length,
+    window.document.querySelectorAll('#view .pair__open').length + ' buttons / ' + pairs.length + ' pairs');
+  if (pairs[0]) {
+    const before = spokenCount();
+    pairs[0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    check('phonetics: clicking a pair speaks it', spokenCount() > before,
+      'speak calls did not increase');
+  }
+
+  // 3. conjugation is reachable and complete
+  const c = YK.conj.conjugate('먹다');
+  check('conj: a verb produces all ten forms', c && c.forms.length === 10, c && c.forms.length);
+  check('conj: nouns are not conjugated', YK.conj.conjugate('학생') === null);
+  go('#/conj?w=' + encodeURIComponent('덥다'));
+  check('conj view: shows the irregular note',
+    /不规则/.test(window.document.getElementById('view').textContent),
+    window.document.getElementById('view').textContent.slice(0, 80));
+
+  // 4. the deconstruction animation builds one box per syllable
+  check('hangulAnim: exposes cell/morph', !!(YK.hangulAnim && YK.hangulAnim.cell && YK.hangulAnim.morph));
+  const cell = YK.hangulAnim.cell('덥');
+  const parts = cell.querySelectorAll('.hpart');
+  check('hangulAnim: a syllable becomes its three letters', parts.length === 3,
+    [...parts].map((p) => p.textContent).join(''));
+  check('hangulAnim: no-jong syllable has two letters',
+    YK.hangulAnim.cell('더').querySelectorAll('.hpart').length === 2);
+  check('hangulAnim: aligns the unchanged part',
+    JSON.stringify(YK.hangulAnim.align([...'한국어'], [...'한구거'])) ===
+      JSON.stringify({ prefix: 1, suffix: 0 }));
 }
 
 /* --- 5. lexical coverage of the actual dialogues ----------------------- */
