@@ -25,7 +25,7 @@
       h('span', { class: 'tokcard__ko' }, t.text),
       h('span', { class: 'tokcard__zh' },
         t.entry ? t.entry.zh : '词库未收录'));
-    card.addEventListener('click', () => onTap(t, card));
+    card.addEventListener('click', (e) => { e.stopPropagation(); onTap(t, card); });
     return card;
   }
 
@@ -59,7 +59,7 @@
         }));
       }
       result.appendChild(wrap);
-      stats.append(
+      YK.mount(stats, 
         ui.chip(words.length + ' 个词'),
         ui.chip('识别出 ' + known + ' 个', 'chip--good'),
         words.length - known ? ui.chip((words.length - known) + ' 个没收录', 'chip--warm') : null,

@@ -116,10 +116,8 @@
     buildNav();
     initDrawer();
 
-    /* close popovers on outside click / scroll */
-    document.addEventListener('click', () => YK.closeAll());
-    window.addEventListener('scroll', () => YK.closeAll(), { passive: true });
-    window.addEventListener('resize', () => YK.closeAll());
+    /* popovers bind their own outside-click / scroll dismissal (see core/ui.js),
+       so the opening click never closes what it just opened. */
 
     YK.onRouteChange = (path) => {
       syncNav(path);

@@ -49,6 +49,11 @@
 
   function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
 
+  /* Same child handling as h(), for the places that build a node and then fill
+     it. Element.append() stringifies null/false into "null"/"false" and turns
+     an array into "[object HTMLElement],…", so never call it directly. */
+  function mount(parent, ...kids) { add(parent, kids); return parent; }
+
   const shuffle = (arr) => {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) {
@@ -84,7 +89,7 @@
   }
 
   YK.h = h; YK.esc = esc; YK.qs = qs; YK.qsa = qsa; YK.delegate = delegate;
-  YK.clear = clear; YK.shuffle = shuffle; YK.sample = sample; YK.pick = pick;
+  YK.clear = clear; YK.mount = mount; YK.shuffle = shuffle; YK.sample = sample; YK.pick = pick;
   YK.clamp = clamp; YK.pct = pct; YK.tokens = tokens; YK.HANGUL = HANGUL;
   YK.frag = (kids) => { const f = document.createDocumentFragment(); add(f, [].concat(kids)); return f; };
 })();

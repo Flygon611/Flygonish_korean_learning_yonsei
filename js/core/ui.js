@@ -49,10 +49,32 @@
   const layer = () => document.getElementById('popLayer');
   let open = null;
 
+  /* Dismissal belongs to the popover, not to every caller. A trigger click
+     still bubbles to the document after the popover opens, so the outside
+     listeners are attached one macrotask later — otherwise the opening click
+     closes what it just opened. */
+  function onOutside(e) {
+    if (!open) return;
+    if (e && e.target && open.node.contains(e.target)) return;
+    closeAll();
+  }
+  function bindDismiss() {
+    document.addEventListener('click', onOutside);
+    window.addEventListener('scroll', onOutside, { passive: true });
+    window.addEventListener('resize', onOutside);
+  }
+  function unbindDismiss() {
+    document.removeEventListener('click', onOutside);
+    window.removeEventListener('scroll', onOutside);
+    window.removeEventListener('resize', onOutside);
+  }
+
   function closeAll() {
     if (!open) return;
-    const { node, anchor } = open;
+    const { node, anchor, timer } = open;
+    clearTimeout(timer);
     open = null;
+    unbindDismiss();
     anchor && anchor.classList.remove('is-pinged');
     if (!node.isConnected) return;
     node.classList.add('is-out');
@@ -86,7 +108,7 @@
     anchor.classList.remove('is-pinged');
     void anchor.offsetWidth;
     anchor.classList.add('is-pinged');
-    open = { node, anchor };
+    open = { node, anchor, timer: setTimeout(bindDismiss, 0) };
     if (opts && opts.focus) node.focus();
     return node;
   }

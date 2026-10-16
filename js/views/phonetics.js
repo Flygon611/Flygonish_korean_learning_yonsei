@@ -37,7 +37,7 @@
       const opts = YK.shuffle([it.to, ...wrongs]);
 
       YK.clear(box);
-      box.append(
+      YK.mount(box, 
         h('div', { class: 'row row--between' },
           h('span', { class: 'quizhead__count' }, (state.i + 1) + ' / ' + state.order.length),
           h('span', { class: 'quizhead__count' }, rule.zh + ' 专项')),

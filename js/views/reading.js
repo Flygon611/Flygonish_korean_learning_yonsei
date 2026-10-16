@@ -126,6 +126,7 @@
                 e.currentTarget.textContent = on ? '✓' : '○';
               } }, known ? '✓' : '○'));
           row.addEventListener('click', (e) => {
+            e.stopPropagation();
             const hit = YK.dict.lookup(v.ko);
             ui.popover(row, ui.wordPop(hit ? hit.entry : { ko: v.ko, zh: v.zh, lesson: lesson.no },
               v.ko));

@@ -72,7 +72,8 @@
                 e.currentTarget.classList.toggle('is-on', on);
                 e.currentTarget.textContent = on ? '✓' : '○';
               } }, known ? '✓' : '○')));
-        row.addEventListener('click', () => {
+        row.addEventListener('click', (e) => {
+          e.stopPropagation();
           const hit = YK.dict.lookup(w.ko);
           ui.popover(row, ui.wordPop(hit ? hit.entry : w, w.ko + '  ← ' + w.zh));
         });
@@ -98,7 +99,7 @@
       if (state.i >= state.order.length) {
         const acc = Math.round((state.right / state.order.length) * 100);
         YK.clear(wrap);
-        wrap.append(
+        YK.mount(wrap, 
           h('div', { class: 'card card--pad', style: { textAlign: 'center' } },
             h('div', { class: 'row', style: { justifyContent: 'center', marginBottom: '14px' } },
               ui.ring(state.right / state.order.length, acc + '%', state.right + '/' + state.order.length, 108)),
@@ -114,7 +115,7 @@
       }
       const q = makeQuestion(state.order[state.i], words, onResult);
       YK.clear(wrap);
-      wrap.append(
+      YK.mount(wrap, 
         h('div', { class: 'quizhead' },
           h('span', { class: 'quizhead__count' }, (state.i + 1) + ' / ' + state.order.length),
           ui.bar(state.i / state.order.length),
@@ -275,7 +276,7 @@
       }
 
       YK.clear(wrap);
-      wrap.append(
+      YK.mount(wrap, 
         h('div', { class: 'quizhead' },
           h('span', { class: 'quizhead__count' }, (state.i + 1) + ' / ' + state.order.length),
           ui.bar(state.i / state.order.length),

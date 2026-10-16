@@ -55,6 +55,7 @@ if (!YK || !YK.views || !YK.views.home) { console.log('✗ boot did not run'); p
 
 /* --- helpers ----------------------------------------------------------- */
 let pass = 0, fail = 0;
+const await0 = (ms) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { /* spin: jsdom has no await here */ } };
 const check = (name, cond, extra) => {
   if (cond) { pass++; }
   else { fail++; console.log('  ✗ ' + name + (extra ? '  — ' + extra : '')); }
@@ -170,6 +171,51 @@ go('#/vocab?mode=flash');
     flip.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
     check('vocab/flash: card flips', flip.classList.contains('is-flipped'));
   }
+}
+
+/* --- 4b. popover must survive the click that opened it ------------------
+   Regression: a global document click-closer used to fire on the same
+   bubbling click that opened the popover, so it flashed and vanished. */
+{
+  const cases = [
+    ['#/lookup?q=' + encodeURIComponent('저는 학생입니다.'), '#view .tokcard', 'lookup token'],
+    ['#/vocab?l=1&mode=list', '#view .word-row', 'vocab list row'],
+    ['#/reading?l=1&s=1', '#view .dlg__ko .w', 'reading word'],
+  ];
+  for (const [route, sel, label] of cases) {
+    go(route);
+    const trigger = window.document.querySelector(sel);
+    check(label + ': trigger exists', !!trigger);
+    if (!trigger) continue;
+    trigger.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }));
+    const pop = window.document.querySelector('#popLayer .pop');
+    check(label + ': popover opens', !!pop);
+    // the opening click has finished bubbling by now; the popover must still be there
+    check(label + ': popover still open after the click event settles', !!pop && pop.isConnected);
+    // a real outside click must still dismiss it
+    window.document.getElementById('view').dispatchEvent(
+      new window.MouseEvent('click', { bubbles: true }));
+    const after = window.document.querySelector('#popLayer .pop');
+    check(label + ': outside click dismisses', !after || after.classList.contains('is-out'));
+    YK.closeAll();
+  }
+}
+
+/* --- 4c. no stray "null"/"false"/"[object" text from native append ------- */
+{
+  const routes = ['#/lookup?q=' + encodeURIComponent('저는 학생입니다.'),
+    '#/lookup', '#/phonetics', '#/practice?mode=particle',
+    '#/vocab?l=1&mode=flash', '#/practice?mode=order'];
+  for (const r of routes) {
+    const view = go(r);
+    const txt = view.textContent;
+    check('no literal null in ' + r + ' (pre-render)', !/(^|[\s>])null([\s<]|$)/.test(txt), txt.slice(0, 90));
+  }
+  // the specific case that used to leak: a zero "not found" count
+  go('#/lookup?q=' + encodeURIComponent('저는 학생입니다.'));
+  await0(150);
+  const txt = window.document.getElementById('view').textContent;
+  check('lookup stats row has no literal "null"', !txt.includes('null'), txt.slice(0, 120));
 }
 
 /* --- 5. lexical coverage of the actual dialogues ----------------------- */

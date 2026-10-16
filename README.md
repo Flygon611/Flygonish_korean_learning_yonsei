@@ -128,12 +128,23 @@ python3 tools/build_corpus.py     # 从缓存页面重新生成 js/data/lessons.
 python3 tools/fetch_irasutoya.py  # 重新抓插画
 python3 tools/fetch_silk.py       # 重新抓图标
 python3 tools/build_fonts.py      # 重新生成字体子集（需 fontTools）
-node tools/smoke.js               # 无头冒烟测试（需 jsdom）
+node tools/smoke.js               # jsdom 无头测试：路由、交互、语料完整性（需 jsdom）
+node tools/tts-check.js           # 朗读队列时序测试（cancel/speak 竞态、连点覆盖）
+node tools/browser-check.js       # 真实浏览器交互检查（需 puppeteer-core + Edge/Chrome）
 ```
 
-`tools/smoke.js` 会把真实的 `index.html` 和全部脚本加载进 jsdom，
-逐条渲染 21 个路由、模拟点击答题与翻卡、检查语料完整性，
-并统计词典对真实对话的覆盖率。当前状态：**203 项检查全部通过，0 运行时错误**。
+三个测试各管一段，都是验证真实行为而不是走过场：
+
+- **`tools/smoke.js`** 把真实的 `index.html` 和全部脚本加载进 jsdom，
+  逐条渲染 21 个路由、模拟点击答题与翻卡、检查语料完整性，
+  统计词典对真实对话的覆盖率，并回归两个曾经真出现过的 bug
+  （弹窗被自己的打开点击关掉、`append(null)` 泄漏出字面量 `null`）。
+  当前：**222 项检查全部通过，0 运行时错误**。
+- **`tools/tts-check.js`** 用模拟的 `speechSynthesis` 复现 Chrome 的
+  「`cancel()` 后同步 `speak()` 会被丢弃」行为，断言时序正确、连点只读最后一句。
+  当前：**15 项检查全部通过**。
+- **`tools/browser-check.js`** 用 puppeteer 驱动真实的 Edge，
+  点开弹窗、点外部关闭、逐个页面检查横向溢出。
 
 ## 预览
 
