@@ -75,7 +75,7 @@
         row.addEventListener('click', (e) => {
           e.stopPropagation();
           const hit = YK.dict.lookup(w.ko);
-          ui.popover(row, ui.wordPop(hit ? hit.entry : w, w.ko + '  ← ' + w.zh));
+          ui.popover(row, ui.wordPop(hit ? hit.entry : w, w.ko));
         });
         box.appendChild(row);
       }

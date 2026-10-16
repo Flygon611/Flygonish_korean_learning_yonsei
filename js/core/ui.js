@@ -206,6 +206,11 @@
         chip(raw)),
       h('div', { class: 'pop__row' },
         YK.tts.button(entry ? entry.ko : raw),
+        h('a', { class: 'btn btn--sm btn--primary',
+          href: '#/word?w=' + encodeURIComponent(entry ? entry.ko : raw) }, '详细 →'),
+        YK.conj && YK.conj.canConjugate(entry ? entry.ko : raw)
+          ? h('a', { class: 'btn btn--sm', href: '#/conj?w=' + encodeURIComponent(entry.ko) }, '变形')
+          : null,
         extra || null));
   }
 

@@ -86,9 +86,23 @@ const EDGE = '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge';
   ok('弹窗在视口内', !!pop && parseFloat(pop.left) >= 0, pop && pop.left);
   await page.screenshot({ path: '/tmp/shots/live-reading-pop.png' });
 
+  console.log('词条页');
+  await go('#/word?w=' + encodeURIComponent('배우다'));
+  const wd = await page.evaluate(() => ({
+    rows: document.querySelectorAll('#view .conj__row').length,
+    ex: document.querySelectorAll('#view .word-row').length,
+  }));
+  ok('词条页有十种变形', wd.rows === 10, String(wd.rows));
+  ok('词条页有课文例句', wd.ex > 0, String(wd.ex));
+  await click('#view .conj__morph');
+  await new Promise((r) => setTimeout(r, 400));
+  ok('变形可以拆开', await page.evaluate(() => !!document.querySelector('#view .mrow')));
+  await page.screenshot({ path: '/tmp/shots/live-word.png' });
+
   console.log('布局');
   for (const [hash, name] of [['#/', '首页'], ['#/hangul', '字母'], ['#/phonetics', '音变'],
-    ['#/grammar', '语法'], ['#/practice', '练习'], ['#/cast', '人物']]) {
+    ['#/grammar', '语法'], ['#/practice', '练习'], ['#/cast', '人物'],
+    ['#/word?w=' + encodeURIComponent('좋다'), '词条'], ['#/conj', '变形表']]) {
     await go(hash);
     const info = await page.evaluate(() => ({
       h: document.documentElement.scrollHeight,

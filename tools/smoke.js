@@ -113,6 +113,7 @@ const routes = ['#/', '#/hangul', '#/phonetics', '#/reading?l=1&s=1', '#/vocab',
   '#/practice?mode=translate', '#/practice?mode=order',
   '#/practice?mode=pattern&l=4', '#/practice?mode=phonetics',
   '#/lookup', '#/lookup?q=' + encodeURIComponent('저는 학생입니다.'), '#/cast',
+  '#/word', '#/word?w=' + encodeURIComponent('먹다'), '#/word?w=' + encodeURIComponent('학생'),
   '#/conj', '#/conj?w=' + encodeURIComponent('먹다'),
   '#/conj?w=' + encodeURIComponent('덥다'), '#/conj?w=' + encodeURIComponent('아니다')];
 
@@ -306,6 +307,30 @@ go('#/vocab?mode=flash');
     check('grammar: no example is really a Chinese explanation', bad === 0, bad + ' bad');
     check('grammar: no pattern is left without an explanation', empty === 0, empty + ' empty');
   }
+
+  /* Tapping a word anywhere must lead somewhere with more than a gloss. */
+  go('#/vocab');
+  const vrow = window.document.querySelector('#view .word-row');
+  check('vocab: word rows are tappable', !!vrow);
+  if (vrow) {
+    vrow.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    const pop = window.document.querySelector('#popLayer .pop');
+    check('vocab: tapping a word opens its card', !!pop && pop.textContent.length > 2);
+    check('popover: offers the detail page',
+      !!(pop && pop.querySelector('a[href*="#/word"]')));
+    YK.closeAll();
+  }
+  go('#/word?w=' + encodeURIComponent('배우다'));
+  const wv = window.document.getElementById('view');
+  check('word page: shows the word', /배우다/.test(wv.textContent));
+  check('word page: shows all ten conjugations',
+    wv.querySelectorAll('.conj__row').length === 10,
+    wv.querySelectorAll('.conj__row').length);
+  check('word page: finds real textbook sentences',
+    wv.querySelectorAll('.word-row').length > 0);
+  go('#/word?w=' + encodeURIComponent('학생'));
+  check('word page: a noun has no conjugation section',
+    window.document.querySelectorAll('#view .conj__row').length === 0);
 
   // 3. conjugation is reachable and complete
   const c = YK.conj.conjugate('먹다');

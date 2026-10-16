@@ -8,6 +8,43 @@
   const { h } = YK;
   const { ui } = YK;
 
+
+  /* The ten forms, each able to take itself apart. Shared with the word detail
+     page so there is one implementation of "拆开看". */
+  function table(word, conj) {
+    if (!conj) return h('div', {});
+    return h('div', {},
+      conj.irregular
+        ? h('div', { class: 'explain', style: { margin: '0 0 var(--s3)' } },
+            h('b', {}, '不规则活用：'), conj.irregular)
+        : null,
+      h('div', { class: 'card conj' },
+        h('div', { class: 'conj__hint faint' },
+          '点「拆开看」把词拆成字母：需要移动的字母会带着箭头飞到新位置。'),
+        conj.forms.map((f) => {
+          const stage = h('div', { class: 'conj__stage' });
+          let play = null;
+          const btn = h('button', { class: 'btn btn--sm conj__morph', type: 'button',
+            title: '拆开看字母怎么变' }, '拆开看');
+          btn.addEventListener('click', () => {
+            if (!play) play = YK.hangulAnim.morph(stage, word, f.text);
+            else play();
+          });
+          return h('div', { class: 'conj__row' + (f.verbOnly ? ' is-verbonly' : '') },
+            h('div', { class: 'conj__head' },
+              h('div', {},
+                h('div', { class: 'conj__label' }, f.label,
+                  f.verbOnly
+                    ? h('span', { class: 'faint', style: { fontSize: '11px', marginLeft: '5px' } }, '动词')
+                    : null),
+                h('div', { class: 'conj__zh' }, f.zh)),
+              h('div', { class: 'conj__form' }, f.text),
+              YK.tts.button(f.text),
+              btn),
+            stage);
+        })));
+  }
+
   function render(params) {
     const word = (params.w || '').trim();
     const entry = word ? (YK.dict.lookup(word) || {}).entry : null;
@@ -43,25 +80,7 @@
         h('a', { class: 'btn', href: '#/conj' }, '← 回到词表'));
     }
 
-    const rows = conj.forms.map((f) => {
-      const stage = h('div', { class: 'conj__stage' });
-      let play = null;
-      const btn = h('button', { class: 'btn btn--sm', type: 'button', title: '拆开看字母怎么变' }, '拆开看');
-      btn.addEventListener('click', () => {
-        if (!play) play = YK.hangulAnim.morph(stage, word, f.text);
-        else play();
-      });
-      return h('div', { class: 'conj__row' + (f.verbOnly ? ' is-verbonly' : '') },
-        h('div', { class: 'conj__head' },
-          h('div', {},
-            h('div', { class: 'conj__label' }, f.label,
-              f.verbOnly ? h('span', { class: 'faint', style: { fontSize: '11px', marginLeft: '5px' } }, '动词') : null),
-            h('div', { class: 'conj__zh' }, f.zh)),
-          h('div', { class: 'conj__form' }, f.text),
-          YK.tts.button(f.text),
-          btn),
-        stage);
-    });
+    const rows = table(word, conj);
 
     return h('div', {},
       ui.pageHead({
@@ -84,5 +103,5 @@
   }
 
   YK.views = YK.views || {};
-  YK.views.conj = { title: '动词变形', label: '变形', icon: '活', render };
+  YK.views.conj = { title: '动词变形', label: '变形', icon: '活', render, table };
 })();

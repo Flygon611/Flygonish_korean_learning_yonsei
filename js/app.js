@@ -13,6 +13,7 @@
     { path: '/grammar',   label: '语法', view: 'grammar',   icon: 'script',       zh: '语法库' },
     { path: '/practice',  label: '练习', view: 'practice',  icon: 'pencil',       zh: '练习' },
     { path: '/lookup',    label: '查词', view: 'lookup',    icon: 'magnifier',    zh: '句子查词' },
+    { path: '/word',      label: '词条', view: 'word',      icon: 'book',         zh: '词条与变形' },
     { path: '/cast',      label: '人物', view: 'cast',      icon: 'group',        zh: '登场人物' },
   ];
 
@@ -113,6 +114,7 @@
   /* views reachable by link but not shown in the sidebar */
   const EXTRA_ROUTES = [
     { path: '/conj', view: 'conj' },
+    { path: '/word', view: 'word' },
   ];
 
   /* ------------------------------------------------------------------ boot */
