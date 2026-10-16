@@ -86,6 +86,25 @@
     return { lesson, sec };
   }
 
+  /* one grammar example, with every word tappable.
+
+     The grammar library had this from the start but the reading page rendered
+     the examples as plain text, so tapping a word in a sentence you were
+     actually studying did nothing. */
+  function exRow(e) {
+    return h('div', { class: 'gex' },
+      h('div', {},
+        h('div', { class: 'gex__ko' }, ui.koreanWords(e.ko, (raw, anchor) => {
+          const hit = YK.dict.lookup(raw);
+          const entry = hit && hit.entry;
+          ui.popover(anchor, ui.wordPop(entry, raw, h('a', {
+            class: 'btn btn--sm', href: '#/lookup?q=' + encodeURIComponent(e.ko),
+          }, '拆整句')));
+        })),
+        e.zh ? h('div', { class: 'gex__zh' }, e.zh) : null),
+      ui.speakBtn(e.ko));
+  }
+
   function render(params) {
     let lessonNo = Number(params.l) || 1;
     let sectionNo = Number(params.s) || 1;
@@ -162,18 +181,10 @@
                 h('p', { class: 'gcard__exp' },
                   h('b', { class: 'gpoint__n' }, pt.n ? String(pt.n) + '.' : ''),
                   pt.explain),
-                (pt.examples || []).slice(0, 2).map((e) => h('div', { class: 'gex' },
-                  h('div', {},
-                    h('div', { class: 'gex__ko' }, e.ko),
-                    h('div', { class: 'gex__zh' }, e.zh || '')),
-                  ui.speakBtn(e.ko)))))
+                (pt.examples || []).slice(0, 2).map(exRow)))
             : h('div', {},
                 h('p', { class: 'gcard__exp' }, g.explain),
-                examples.map((e) => h('div', { class: 'gex' },
-                  h('div', {},
-                    h('div', { class: 'gex__ko' }, e.ko),
-                    h('div', { class: 'gex__zh' }, e.zh || '')),
-                  ui.speakBtn(e.ko))))));
+                examples.map(exRow))));
       })));
     }
 

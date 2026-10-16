@@ -86,6 +86,23 @@ const EDGE = '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge';
   ok('弹窗在视口内', !!pop && parseFloat(pop.left) >= 0, pop && pop.left);
   await page.screenshot({ path: '/tmp/shots/live-reading-pop.png' });
 
+  /* The grammar examples on the reading page used to be plain text, so the
+     words in the very sentence being studied were the one place you could not
+     tap. Checked in a real browser because tappability is the point. */
+  console.log('课文页语法例句');
+  await go('#/reading?l=1&s=2');
+  const rg = await page.evaluate(() => {
+    const el = document.querySelector('#view .gcard .gex__ko .w');
+    if (!el) return { words: 0, hit: false };
+    el.scrollIntoView({ block: 'center' });
+    const r = el.getBoundingClientRect();
+    const top = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+    return { words: document.querySelectorAll('#view .gcard .gex__ko .w').length,
+             hit: top === el, word: el.textContent };
+  });
+  ok('课文页语法例句被切成可点的词', rg.words > 0, JSON.stringify(rg));
+  ok('语法例句里的词真的能点到', !!rg.hit, JSON.stringify(rg));
+
   console.log('词条页');
   await go('#/word?w=' + encodeURIComponent('배우다'));
   const wd = await page.evaluate(() => ({
