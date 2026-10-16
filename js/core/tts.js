@@ -2,34 +2,40 @@
    Korean speech through the browser's own engine, so the site stays offline
    and dependency-free.
 
-   Two Chrome quirks drive the shape of this file:
+   Design notes, learned the hard way:
 
-   1. `cancel()` followed by a synchronous `speak()` inside the same task makes
-      the engine drop the new utterance — the first thing you click plays, and
-      everything after it is silent. So when something is already speaking we
-      cancel, then speak on a short flush delay.
-   2. An utterance with no live reference can be collected before it is
-      spoken; the queue then goes quiet at random. `current` holds on to it.
-
-   Everything degrades to "no sound, no error" when the platform has no
-   Korean voice. */
+   * `speak()` is called synchronously from the click handler. Safari and
+     Chrome only grant speech to an utterance issued inside the user's
+     activation window, so nothing may be queued from a timer.
+   * `resume()` is called first: Chrome's queue can be left in a paused state
+     (after the tab is backgrounded, or the machine sleeps) and then `speak()`
+     silently does nothing.
+   * Failures are surfaced, not swallowed. If the engine never fires `start`,
+     or reports an error, the user gets told which of the two it was instead of
+     tapping a button that does nothing.
+   * `diagnose()` exists so a "no sound" report can be turned into a concrete
+     answer — voice list, chosen voice, error code, time to start. */
 (function () {
   const YK = (window.YK = window.YK || {});
   const synth = window.speechSynthesis;
 
   let voice = null;
   let ready = false;
-  let current = null;          // keeps the in-flight utterance alive
-  let flush = null;            // pending speak-after-cancel timer
+  let current = null;        // keeps the in-flight utterance alive
+  let watchdog = null;
+  let lastError = null;
+
+  function koreanVoices() {
+    if (!synth) return [];
+    return (synth.getVoices() || [])
+      .filter((v) => /^ko/i.test(v.lang) || /korean|한국/i.test(v.name));
+  }
 
   function pickVoice() {
-    if (!synth) return null;
-    const voices = synth.getVoices() || [];
-    if (!voices.length) return null;
-    const ko = voices.filter((v) => /^ko/i.test(v.lang) || /korean|한국/i.test(v.name));
+    const ko = koreanVoices();
     if (!ko.length) return null;
-    // prefer the higher-quality named voices when the OS offers them
-    return ko.find((v) => /Sora|Yuna|Premium|Enhanced|Google/i.test(v.name)) || ko[0];
+    // prefer a real local voice over the novelty ones Edge ships
+    return ko.find((v) => /Yuna|Sora|Google|Premium|Enhanced/i.test(v.name)) || ko[0];
   }
 
   function refresh() {
@@ -40,8 +46,12 @@
   if (synth) {
     refresh();
     synth.addEventListener?.('voiceschanged', refresh);
-    // Safari sometimes populates late without firing the event
-    setTimeout(refresh, 400);
+    setTimeout(refresh, 400);        // Safari populates late without the event
+    setTimeout(refresh, 1500);
+  }
+
+  function notify(msg, kind) {
+    if (YK.ui && YK.ui.toast) YK.ui.toast(msg, kind || null);
   }
 
   function clearMarks() {
@@ -49,46 +59,105 @@
   }
 
   function stop() {
-    clearTimeout(flush);
-    flush = null;
+    clearTimeout(watchdog);
+    watchdog = null;
     current = null;
     if (synth) synth.cancel();
     clearMarks();
   }
 
   function speak(text, btn) {
-    if (!synth || !text) return false;
+    if (!synth) { notify('这个浏览器不支持语音合成', 'bad'); return false; }
+    if (!text) return false;
+
+    refresh();                       // voices may only just have arrived
 
     const u = new SpeechSynthesisUtterance(String(text));
-    u.lang = voice ? voice.lang : 'ko-KR';
+    u.lang = 'ko-KR';
     if (voice) u.voice = voice;
-    u.rate = 0.86;                       // beginner-friendly: slower than native
+    u.rate = 0.86;                   // beginner-friendly: slower than native
     u.pitch = 1;
-    u.onstart = () => { if (btn) btn.classList.add('is-speaking'); };
-    u.onend = u.onerror = () => { if (btn) btn.classList.remove('is-speaking'); };
+
+    let started = false;
+    lastError = null;
+    u.onstart = () => {
+      started = true;
+      clearTimeout(watchdog);
+      if (btn) btn.classList.add('is-speaking');
+    };
+    u.onend = () => { if (btn) btn.classList.remove('is-speaking'); };
+    u.onerror = (e) => {
+      lastError = (e && e.error) || 'unknown';
+      clearTimeout(watchdog);
+      if (btn) btn.classList.remove('is-speaking');
+    };
 
     clearMarks();
-    clearTimeout(flush);
-    current = u;                         // held until the next call or stop()
+    clearTimeout(watchdog);
+    current = u;                     // held until the next call or stop()
 
-    /* Also treat a queued flush as busy: after cancel() the engine reports
-       itself idle, so trusting it alone lets the next click speak immediately
-       and you hear a stutter of half-finished sentences. */
-    const busy = synth.speaking || synth.pending || flush !== null;
-    if (busy) {
-      clearTimeout(flush);
-      if (synth.speaking || synth.pending) synth.cancel();
-      flush = setTimeout(() => {
-        flush = null;
-        if (current !== u) return;       // superseded by a newer click
-        if (synth.paused) synth.resume();
-        synth.speak(u);
-      }, 90);
-    } else {
+    // everything below stays inside this click's activation window
+    if (synth.speaking || synth.pending) synth.cancel();
+    if (synth.paused) synth.resume();
+    try {
+      synth.speak(u);
+    } catch (err) {
+      notify('朗读失败：' + err.message, 'bad');
+      return false;
+    }
+
+    watchdog = setTimeout(() => {
+      if (started) return;
+      if (lastError) {
+        notify('朗读失败：' + lastError +
+          (lastError === 'not-allowed' ? '（浏览器拒绝了这次朗读）' : ''), 'bad');
+      } else if (!ready) {
+        notify('系统里没有韩语语音，装上「韩语（韩国）」后即可朗读', 'bad');
+      } else {
+        notify('浏览器没有开始朗读（已选用 ' + voice.name + '）', 'bad');
+      }
+    }, 1500);
+
+    return true;
+  }
+
+  /* One-shot report used by the 字母与发音 page. */
+  function diagnose() {
+    return new Promise((resolve) => {
+      if (!synth) {
+        resolve({ ok: false, msg: '这个浏览器不支持 speechSynthesis' });
+        return;
+      }
+      refresh();
+      const all = synth.getVoices() || [];
+      const ko = koreanVoices();
+      const base = {
+        voices: all.length,
+        korean: ko.map((v) => v.name + ' / ' + v.lang),
+        chosen: voice ? voice.name + ' / ' + voice.lang : '(没有可用的韩语语音)',
+      };
+      if (!ko.length) {
+        resolve(Object.assign(base, { ok: false, msg: '系统里没有韩语语音' }));
+        return;
+      }
+      const u = new SpeechSynthesisUtterance('안녕하세요');
+      u.lang = 'ko-KR';
+      u.voice = voice;
+      const t0 = Date.now();
+      let settled = false;
+      const finish = (ok, msg) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(Object.assign(base, { ok, msg }));
+      };
+      u.onstart = () => finish(true, '引擎已开始朗读（' + (Date.now() - t0) + ' ms）');
+      u.onerror = (e) => finish(false, '引擎报错：' + ((e && e.error) || 'unknown'));
+      const timer = setTimeout(() => finish(false, '1.5 秒内没有开始朗读'), 1500);
+      synth.cancel();
       if (synth.paused) synth.resume();
       synth.speak(u);
-    }
-    return true;
+    });
   }
 
   /* build the little speaker button used all over the app */
@@ -103,10 +172,9 @@
   }
 
   YK.tts = {
-    speak, stop, button,
+    speak, stop, button, diagnose,
     available: () => !!synth,
     hasKoreanVoice: () => ready,
-    /* exposed for tests */
-    _internals: () => ({ current, pending: !!flush, voice: voice && voice.name }),
+    _internals: () => ({ current, voice: voice && voice.name, ready }),
   };
 })();

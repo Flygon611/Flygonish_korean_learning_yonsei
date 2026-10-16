@@ -31,6 +31,47 @@
       h('div', { class: 'jamo-grid', style: { marginTop: '16px' } }, list.map((j) => jamoButton(j))));
   }
 
+  /* Speech is the one thing this site cannot verify on the user's behalf:
+     the OS either has a Korean voice or it does not. So instead of failing
+     silently, measure it and show the result. */
+  function selfTest() {
+    const out = h('div', { class: 'explain', style: { display: 'none' } });
+    const btn = h('button', { class: 'btn btn--sm btn--primary', type: 'button' },
+      YK.icon('sound'), '测一下发音');
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      btn.textContent = '正在检测…';
+      const r = await YK.tts.diagnose();
+      YK.clear(out);
+      out.style.display = 'block';
+      YK.mount(out,
+        h('div', { class: 'row', style: { gap: '8px', marginBottom: '8px' } },
+          YK.icon(r.ok ? 'tick' : 'cross'),
+          h('b', { style: { color: r.ok ? 'var(--good)' : 'var(--bad)' } }, r.ok ? '发音正常' : '发音不可用'),
+          h('span', { class: 'muted' }, r.msg)),
+        h('div', { class: 'muted', style: { fontSize: '12px', lineHeight: '1.8' } },
+          h('div', {}, '系统语音总数：' + (r.voices == null ? '—' : r.voices)),
+          h('div', {}, '韩语语音：' + ((r.korean && r.korean.length) ? r.korean.join('、') : '（没有）')),
+          h('div', {}, '本次选用：' + (r.chosen || '—'))),
+        r.ok ? null : h('p', { class: 'muted', style: { fontSize: '12px', marginTop: '8px' } },
+          'macOS：系统设置 → 辅助功能 → 朗读内容 → 系统声音 → 管理声音 → 添加「韩语（韩国）」。' +
+          '装好后刷新页面再测一次。'));
+      btn.disabled = false;
+      YK.clear(btn);
+      YK.mount(btn, YK.icon('sound'), '再测一次');
+    });
+    return h('section', { class: 'card card--pad' },
+      h('div', { class: 'row row--between', style: { alignItems: 'flex-start' } },
+        h('div', { style: { maxWidth: '58ch' } },
+          h('h2', { style: { fontSize: '15px' } }, '发音自检'),
+          h('p', { class: 'muted', style: { fontSize: '12.5px', marginTop: '4px', lineHeight: '1.7' } },
+            '整站朗读用的是浏览器自带的语音合成，不依赖任何在线服务。' +
+            '如果点喇叭没声音，先在这里测——它会告出系统里到底有没有韩语语音、' +
+            '这次选中了哪一个、以及引擎有没有真的开始读。')),
+        btn),
+      out);
+  }
+
   function render() {
     const compose = h('div', { class: 'compose' },
       h('div', { class: 'compose__item' }, h('span', { class: 'compose__ch' }, 'ㅂ'),
@@ -97,6 +138,7 @@
                 ui.chip('7 个收音代表音')],
       }),
       intro,
+      selfTest(),
       ui.sectionTitle('元音 · 모음'),
       jamoSection('单元音 10 个', '开口度和舌位固定不变，叫单元音。', D.vowels, 'student'),
       h('div', { style: { height: '16px' } }),

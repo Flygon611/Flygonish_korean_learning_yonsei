@@ -71,6 +71,34 @@ console.log('scripts loaded: ' + scripts.length);
 console.log('corpus: ' + window.YK_LESSONS.lessons.length + ' lessons, ' +
   YK.dict.size() + ' dictionary entries');
 
+/* --- 0. static guard: never use Element.append() ------------------------
+   append(null) silently stringifies to the text "null" (appendChild throws,
+   so the bug ships). It leaked into the lookup page and then into the speech
+   self-test, so it is checked statically as well as at runtime. */
+{
+  const files = [];
+  (function walk(dir) {
+    for (const name of fs.readdirSync(path.join(ROOT, dir))) {
+      const rel = dir + '/' + name;
+      const full = path.join(ROOT, rel);
+      if (fs.statSync(full).isDirectory()) walk(rel);
+      else if (name.endsWith('.js')) files.push(rel);
+    }
+  })('js');
+  const offenders = [];
+  for (const f of files) {
+    const src = fs.readFileSync(path.join(ROOT, f), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')      // block comments
+      .replace(/(^|[^:])\/\/[^\n]*/g, '$1');   // line comments
+    src.split('\n').forEach((line, i) => {
+      if (/\.append\s*\(/.test(line) && !/appendChild/.test(line)) {
+        offenders.push(f + ':' + (i + 1));
+      }
+    });
+  }
+  check('no native Element.append() in js/', offenders.length === 0, offenders.join(', '));
+}
+
 /* --- 1. every route renders ------------------------------------------- */
 const routes = ['#/', '#/hangul', '#/phonetics', '#/reading?l=1&s=1', '#/vocab',
   '#/vocab?l=5&mode=flash', '#/vocab?l=2&mode=ko2zh', '#/vocab?mode=listen',

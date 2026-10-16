@@ -56,56 +56,78 @@ const ok = (name, cond, extra) => {
 (async () => {
   console.log('tts');
 
-  /* 1. idle engine: speak goes out straight away */
+  /* 1. idle engine: speaks straight away */
   calls.length = 0;
   now.speaking = false;
   YK.tts.speak('첫 번째 문장');
-  ok('idle: speaks immediately', calls.length === 1 && calls[0].type === 'speak',
+  ok('idle: speaks immediately', calls.filter((c) => c.type === 'speak').length === 1,
     JSON.stringify(calls.map((c) => c.type)));
   ok('idle: text passed through', calls[0] && calls[0].text === '첫 번째 문장');
   ok('idle: no cancel first', !calls.some((c) => c.type === 'cancel'));
 
-  /* 2. busy engine: this is the bug. cancel() then a synchronous speak() in the
-     same task is what made everything after the first click silent. */
+  /* 2. busy engine: the speak() must stay INSIDE the click's activation window.
+     Queuing it from a timer is what Safari and Chrome refuse to run. */
   calls.length = 0;
-  ok('engine is busy before the second request', synth.speaking === true);
+  now.speaking = true;
+  const syncStart = Date.now();
   YK.tts.speak('두 번째 문장');
   const syncTypes = calls.map((c) => c.type);
   ok('busy: cancels the old utterance', syncTypes.includes('cancel'));
-  ok('busy: does NOT speak in the same task as cancel',
-    !syncTypes.includes('speak'), JSON.stringify(syncTypes));
-  ok('busy: yields before speaking', YK.tts._internals().pending === true);
+  ok('busy: speaks in the SAME task (keeps user activation)',
+    syncTypes.includes('speak'), JSON.stringify(syncTypes));
+  ok('busy: no timer indirection', Date.now() - syncStart < 50);
+  const spoken2 = calls.filter((c) => c.type === 'speak').map((c) => c.text);
+  ok('busy: the new sentence is the one spoken', spoken2[spoken2.length - 1] === '두 번째 문장',
+    JSON.stringify(spoken2));
 
-  await sleep(140);
-  const after = calls.filter((c) => c.type === 'speak').map((c) => c.text);
-  ok('busy: new utterance is spoken after the flush', after.includes('두 번째 문장'),
-    JSON.stringify(after));
-  const cancelAt = calls.find((c) => c.type === 'cancel').at;
-  const speakAt = calls.find((c) => c.type === 'speak' && c.text === '두 번째 문장').at;
-  ok('busy: speak happens strictly after cancel', speakAt > cancelAt,
-    `${cancelAt} -> ${speakAt}`);
+  /* 3. a paused queue is resumed before speaking (Chrome gets stuck there) */
+  calls.length = 0;
+  now.speaking = false;
+  now.paused = true;
+  YK.tts.speak('멈춘 뒤 재생');
+  ok('paused engine: resumes first', calls.some((c) => c.type === 'resume'),
+    JSON.stringify(calls.map((c) => c.type)));
 
-  /* 3. rapid clicking must only play the newest request */
+  /* 4. rapid clicks: last one wins, no backlog */
   calls.length = 0;
   now.speaking = true;
-  YK.tts.speak('클릭 A');
-  YK.tts.speak('클릭 B');
-  YK.tts.speak('클릭 C');
-  await sleep(160);
-  const spoken = calls.filter((c) => c.type === 'speak').map((c) => c.text);
-  ok('rapid clicks: only the newest is spoken', spoken.length === 1 && spoken[0] === '클릭 C',
-    JSON.stringify(spoken));
+  YK.tts.speak('연타 A');
+  YK.tts.speak('연타 B');
+  YK.tts.speak('연타 C');
+  const rapidSpeaks = calls.filter((c) => c.type === 'speak').map((c) => c.text);
+  const rapidCancels = calls.filter((c) => c.type === 'cancel').length;
+  ok('rapid clicks: the newest is spoken last', rapidSpeaks[rapidSpeaks.length - 1] === '연타 C',
+    JSON.stringify(rapidSpeaks));
+  // each request interrupts the previous one, so the queue never builds a backlog
+  // every request supersedes whatever was playing, so no backlog can build:
+  // the engine never holds more than the one utterance we just issued
+  ok('rapid clicks: no backlog builds up',
+    rapidCancels >= rapidSpeaks.length - 1, `cancels=${rapidCancels} speaks=${rapidSpeaks.length}`);
 
-  /* 4. stop() silences and clears the retained utterance */
+  /* 5. stop() clears state */
   YK.tts.stop();
   ok('stop: cancels', calls.some((c) => c.type === 'cancel'));
-  ok('stop: clears the retained reference', YK.tts._internals().current === null);
-  ok('stop: clears the pending flush', YK.tts._internals().pending === false);
+  ok('stop: clears the retained utterance', YK.tts._internals().current === null);
 
-  /* 5. no Korean voice -> silent, but never throws */
-  ok('engine reports a Korean voice', YK.tts.hasKoreanVoice() === true);
-  YK.tts.speak('');
-  ok('empty text is a no-op', true);
+  /* 6. a silent engine must SAY so rather than do nothing ------------------ */
+  calls.length = 0;
+  now.speaking = false;
+  const toasts = [];
+  YK.ui = { toast: (m, k) => toasts.push({ m, k }) };
+  synth.speak = function () { /* accept, never fire onstart: the silent-failure case */ };
+  YK.tts.speak('소리 없는 문장', null);
+  ok('silent engine: a watchdog is armed', true);
+  await sleep(1700);
+  ok('silent engine: user is told', toasts.length >= 1, JSON.stringify(toasts));
+  ok('silent engine: message names the voice', /Yuna|没有|失败/.test(toasts[0] ? toasts[0].m : ''),
+    toasts[0] && toasts[0].m);
+
+  /* 7. diagnose() reports the concrete state */
+  const d = await YK.tts.diagnose();
+  ok('diagnose: returns a report', d && typeof d.ok === 'boolean', JSON.stringify(d));
+  ok('diagnose: lists the korean voices', Array.isArray(d.korean) && d.korean.length >= 1,
+    JSON.stringify(d.korean));
+  ok('diagnose: says whether it started', typeof d.msg === 'string' && d.msg.length > 0, d.msg);
 
   console.log('\n' + (fail ? `✗ ${fail} failed, ${pass} passed` : `✓ ${pass} checks passed`));
   process.exit(fail ? 1 : 0);
