@@ -378,6 +378,17 @@ go('#/vocab?mode=flash');
       /assets\/picto\/dir-/.test(picto['앞'] || ''), picto['앞'] || '-');
   }
 
+  /* Words that occur inside textbook sentences, not in the vocabulary list.
+     Tapping one of these used to find nothing. */
+  {
+    const look = (w) => { const h = YK.dict.lookup(w); return h && h.entry ? h.entry.ko : null; };
+    const need = ['담배를', '김치를', '생선은', '우산을', '한자를', '계획을', '손을',
+      '바다에', '영어로', '서울은', '기숙사에', '냉장고에', '피아노를', '목소리가',
+      '졸업합니다', '준비합니다', '사랑합니다', '시작합니다', '청소합니다'];
+    const bad = need.filter((w) => !look(w));
+    check('dict: sentence words resolve, not just vocabulary items', bad.length === 0, bad.join(','));
+  }
+
   // 3. conjugation is reachable and complete
   const c = YK.conj.conjugate('먹다');
   check('conj: a verb produces all ten forms', c && c.forms.length === 10, c && c.forms.length);
