@@ -368,6 +368,12 @@ go('#/vocab?mode=flash');
     check('picto: numerals are drawn by the generator',
       /assets\/picto\/num-sino/.test(picto['일'] || '') && /assets\/picto\/num-native/.test(picto['하나'] || ''),
       (picto['일'] || '-') + ' / ' + (picto['하나'] || '-'));
+    check('picto: 형/오빠 differ only by the speaker badge',
+      /assets\/picto\/fam-/.test(picto['형'] || '') && /assets\/picto\/fam-/.test(picto['오빠'] || '') &&
+      picto['형'] !== picto['오빠'], (picto['형'] || '-') + ' / ' + (picto['오빠'] || '-'));
+    check('picto: verbs have pictures too',
+      !!(picto['먹다'] || picto['보다']) && !!(picto['가다'] || picto['자다']),
+      (picto['가다'] || '-') + ' / ' + (picto['자다'] || '-'));
     check('picto: position words are drawn by the generator',
       /assets\/picto\/dir-/.test(picto['앞'] || ''), picto['앞'] || '-');
   }

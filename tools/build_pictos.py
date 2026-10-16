@@ -9,6 +9,7 @@ are drawn here instead of being faked with whatever emoji looks closest.
 Output: assets/picto/<name>.svg, one file per word.
 """
 import os
+import re
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, 'assets', 'picto')
@@ -163,6 +164,23 @@ def direction(name, kind):
     return card(b)
 
 
+def composite(src, symbol, colour):
+    """An OpenMoji drawing plus a ♂/♀ badge.
+
+    형 and 오빠 are the same person — an older brother. What differs is the
+    SPEAKER: a man says 형, a woman says 오빠. No picture of a person can show
+    that, so the drawing is shared and the badge carries the distinction.
+    """
+    raw = open(src, encoding='utf-8').read()
+    body = re.sub(r'^[\s\S]*?<svg[^>]*>', '', raw)
+    body = body[:body.rfind('</svg>')]
+    badge = ('<circle cx="53" cy="51" r="11" fill="%s" stroke="#fff" stroke-width="1.4"/>'
+             '<text x="53" y="56.5" font-size="14" font-weight="700" fill="#fff" '
+             'text-anchor="middle" font-family="-apple-system, Helvetica, sans-serif">%s</text>'
+             % (colour, symbol))
+    return card('<g transform="scale(0.84) translate(1.5 1)">%s</g>' % body + badge)
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     made = []
@@ -185,6 +203,17 @@ def main():
         made.append((ko, 'num-native-' + d, native(ko, d)))
     for ko, kind in dirs:
         made.append((ko, 'dir-' + ko, direction(ko, kind)))
+
+    # 형/오빠 and 누나/여동생 are drawn the same; the badge says who says it
+    om = os.path.join(ROOT, 'assets', 'openmoji')
+    fam = [('형', '1f466', '\u2642', '#4c6ef5'),    # older brother, male speaker
+           ('오빠', '1f466', '\u2640', '#e64980'),   # older brother, female speaker
+           ('누나', '1f467', '\u2642', '#4c6ef5'),   # older sister, male speaker
+           ('여동생', '1f467', '\u2640', '#e64980')]  # younger sister
+    for ko, hexc, sym, col in fam:
+        src = os.path.join(om, hexc + '.svg')
+        if os.path.exists(src):
+            made.append((ko, 'fam-' + ko, composite(src, sym, col)))
 
     for ko, name, svg in made:
         open(os.path.join(OUT, name + '.svg'), 'w', encoding='utf-8').write(svg)

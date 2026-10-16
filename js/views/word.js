@@ -127,10 +127,11 @@
     /* An exact pictogram for THIS word beats a scene chosen for its theme: it
        was picked concept by concept and looked at. The theme art stays as the
        fallback for words outside the reviewed set. */
-    // the resolver sometimes returns a different base (약 -> 약하다), so the
-    // token as typed gets a second chance before falling back to theme art
-    const picto = (window.YK_PICTO || {})[entry ? entry.ko : word] ||
-                  (window.YK_PICTO || {})[word];
+    /* The token as typed wins over whatever the resolver returned. The resolver
+       guesses (약 -> 약하다, 열다 -> 열 "ten"), and using its answer first put a
+       picture of the number 10 on the page for 열다. */
+    const picto = (window.YK_PICTO || {})[word] ||
+                  (window.YK_PICTO || {})[entry ? entry.ko : word];
     const theme = themeOf(entry);
     const left = h('div', { class: 'wordcard__side' },
       picto ? h('div', { class: 'wordcard__art wordcard__art--picto' },
