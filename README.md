@@ -27,6 +27,19 @@ git push -u origin main
 推送时会要求输入 GitHub 用户名和 **Personal Access Token**（`repo` 权限），
 密码方式 GitHub 早已停用。
 
+### 改完记得递增资源版本号
+
+GitHub Pages 给静态资源设了 `cache-control: max-age=600`，部署后十分钟内
+回访的浏览器可能仍在跑旧 JavaScript —— 表现就是「刚加的功能不见了」。
+`index.html` 里所有本地 css/js 都带 `?v=` 查询串，改动后执行：
+
+```bash
+python3 tools/bump-assets.py
+```
+
+它会自动把日期计数加一并把 29 处引用全部刷新，然后照常提交推送即可。
+临时遇到旧版本，`Cmd + Shift + R` 强制刷新也能解决。
+
 > ⚠️ **公开仓库前请先读 [`CREDITS.md`](CREDITS.md)。**
 > 本项目的课文、词汇、语法与人物立绘来自受版权保护的教材，公开部署属于未授权分发；
 > いらすとや 插画也有「不得以素材为主体再分发」的限制。请自行评估风险。
@@ -131,6 +144,7 @@ tools/                抓取与校验脚本（只在开发时用）
 ## 开发脚本
 
 ```bash
+python3 tools/bump-assets.py      # 改动网站文件后递增缓存版本号（见下）
 python3 tools/build_corpus.py     # 从缓存页面重新生成 js/data/lessons.js
 python3 tools/fetch_irasutoya.py  # 重新抓插画
 python3 tools/fetch_silk.py       # 重新抓图标

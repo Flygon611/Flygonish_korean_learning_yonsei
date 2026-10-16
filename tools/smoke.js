@@ -14,7 +14,9 @@ try {
 }
 
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-const scripts = [...html.matchAll(/<script src="([^"]+)"><\/script>/g)].map((m) => m[1]);
+/* the src carries a cache-busting ?v= — strip it to resolve the real file */
+const scripts = [...html.matchAll(/<script src="([^"]+)"><\/script>/g)]
+  .map((m) => m[1].split('?')[0]);
 const shell = html.replace(/<script src="[^"]+"><\/script>/g, '');
 
 const dom = new JSDOM(shell, { url: 'http://localhost/', pretendToBeVisual: true, runScripts: 'dangerously' });
