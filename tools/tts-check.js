@@ -122,6 +122,38 @@ const ok = (name, cond, extra) => {
   ok('silent engine: message names the voice', /Yuna|没有|失败/.test(toasts[0] ? toasts[0].m : ''),
     toasts[0] && toasts[0].m);
 
+  /* 6b. a voice the OS lists but never installed: start fires, then it ends
+     almost immediately and plays nothing. That must be reported. */
+  calls.length = 0;
+  toasts.length = 0;
+  now.speaking = false;
+  synth.speak = function (u) {
+    calls.push({ type: 'speak', text: u.text, at: Date.now() });
+    now.speaking = true;
+    setTimeout(() => {
+      now.speaking = false;
+      u.onstart && u.onstart();
+      u.onend && u.onend();          // ends instantly: the silent-voice case
+    }, 10);
+  };
+  YK.tts.speak('안녕하세요 저는 학생입니다', null);
+  await sleep(120);
+  ok('silent voice: user is warned it produced no sound',
+    toasts.some((t) => /ms|安装|出声/.test(t.m)), JSON.stringify(toasts));
+
+  /* 6c. an explicit voice choice is remembered */
+  toasts.length = 0;
+  const V = YK.tts.listVoices()[0];
+  ok('listVoices: exposes the korean voices', !!V, JSON.stringify(YK.tts.listVoices()));
+  const picked = YK.tts.setVoice(V.name);
+  ok('setVoice: accepts a known voice', picked === V.name, String(picked));
+  ok('setVoice: remembers it', window.localStorage.getItem('yk1.voice') === V.name);
+  ok('setVoice: rejects an unknown name without losing the current one',
+    YK.tts.setVoice('No Such Voice') === V.name, YK.tts._internals().voice);
+  ok('listVoices: flags the current one',
+    YK.tts.listVoices().some((v) => v.current && v.name === V.name),
+    JSON.stringify(YK.tts.listVoices()));
+
   /* 7. diagnose() reports the concrete state */
   const d = await YK.tts.diagnose();
   ok('diagnose: returns a report', d && typeof d.ok === 'boolean', JSON.stringify(d));

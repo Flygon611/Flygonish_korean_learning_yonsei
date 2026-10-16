@@ -19,6 +19,7 @@
   const YK = (window.YK = window.YK || {});
   const synth = window.speechSynthesis;
 
+  const PREF_KEY = 'yk1.voice';
   let voice = null;
   let ready = false;
   let current = null;        // keeps the in-flight utterance alive
@@ -31,11 +32,44 @@
       .filter((v) => /^ko/i.test(v.lang) || /korean|한국/i.test(v.name));
   }
 
+  function savedName() {
+    try { return localStorage.getItem(PREF_KEY) || ''; } catch (e) { return ''; }
+  }
+
+  /* macOS/Edge ship "novelty" voices (Eddy, Bells, Zarvox…) that are listed as
+     ko-KR-adjacent but are not a usable reading voice. They sort first in the
+     voice list, so without this they become the default. */
+  const NOVELTY = /^(Eddy|Flo|Grandma|Grandpa|Reed|Rocko|Sandy|Shelley|Albert|Bad News|Good News|Bahh|Bells|Boing|Bubbles|Cellos|Jester|Junior|Kathy|Organ|Princess|Ralph|Superstar|Trinoids|Whisper|Wobble|Zarvox|Fred|Zosia|Grandma|Shelley)\b/i;
+
   function pickVoice() {
     const ko = koreanVoices();
     if (!ko.length) return null;
-    // prefer a real local voice over the novelty ones Edge ships
-    return ko.find((v) => /Yuna|Sora|Google|Premium|Enhanced/i.test(v.name)) || ko[0];
+    // An explicit choice always wins: several voices are listed by the OS
+    // before their data is actually installed, and those play silently.
+    const saved = savedName();
+    const chosen = saved && ko.find((v) => v.name === saved);
+    if (chosen) return chosen;
+    return ko.find((v) => /Natural|Online/i.test(v.name))     // Edge's cloud voices
+        || ko.find((v) => /Google/i.test(v.name))             // Chrome's built-in
+        || ko.find((v) => !NOVELTY.test(v.name))              // any real system voice
+        || ko[0];
+  }
+
+  /* Compare by name: getVoices() hands back fresh objects on every call, so
+     identity comparison silently reports "none selected". */
+  const isCurrent = (v) => !!voice && voice.name === v.name && voice.lang === v.lang;
+
+  function listVoices() {
+    return koreanVoices().map((v) => ({ name: v.name, lang: v.lang, current: isCurrent(v) }));
+  }
+
+  function setVoice(name) {
+    const found = koreanVoices().find((v) => v.name === name);
+    if (!found) return voice ? voice.name : null;   // unknown name: keep what works
+    voice = found;
+    ready = true;
+    try { localStorage.setItem(PREF_KEY, name); } catch (e) { /* private mode */ }
+    return voice.name;
   }
 
   function refresh() {
@@ -77,15 +111,29 @@
     if (voice) u.voice = voice;
     u.rate = 0.86;                   // beginner-friendly: slower than native
     u.pitch = 1;
+    u.volume = 1;
 
     let started = false;
+    let startedAt = 0;
     lastError = null;
     u.onstart = () => {
       started = true;
+      startedAt = Date.now();
       clearTimeout(watchdog);
       if (btn) btn.classList.add('is-speaking');
     };
-    u.onend = () => { if (btn) btn.classList.remove('is-speaking'); };
+    u.onend = () => {
+      if (btn) btn.classList.remove('is-speaking');
+      // A voice the OS lists but has not downloaded starts fine and then
+      // finishes almost instantly, silently. Say so instead of leaving the
+      // user tapping a button that appears to work.
+      const ms = startedAt ? Date.now() - startedAt : 0;
+      const syllables = String(text).replace(/[^\uac00-\ud7a3]/g, '').length;
+      if (started && syllables >= 3 && ms < 120 + syllables * 12) {
+        notify('这段朗读只用了 ' + ms + 'ms，几乎肯定没出声——「' +
+          (voice ? voice.name : '当前语音') + '」可能没有真正安装。到「字母与发音」页换一个语音试试。', 'bad');
+      }
+    };
     u.onerror = (e) => {
       lastError = (e && e.error) || 'unknown';
       clearTimeout(watchdog);
@@ -172,7 +220,7 @@
   }
 
   YK.tts = {
-    speak, stop, button, diagnose,
+    speak, stop, button, diagnose, listVoices, setVoice,
     available: () => !!synth,
     hasKoreanVoice: () => ready,
     _internals: () => ({ current, voice: voice && voice.name, ready }),
