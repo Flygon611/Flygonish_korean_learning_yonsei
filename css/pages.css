@@ -369,3 +369,8 @@
 .gcard__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); margin-bottom: var(--s3); }
 .gcard__exp { font-size: 14.5px; line-height: 1.95; color: var(--ink-2); margin-bottom: var(--s2); }
 .gcard__pt + .gcard__pt { margin-top: var(--s4); padding-top: var(--s4); border-top: 1px dashed var(--line); }
+
+/* OpenMoji pictograms: a small SVG of the thing itself, so it sits inside a
+   light panel instead of being cropped to fill the box like a photo. */
+.wordcard__art--picto { background: var(--surface-2); }
+.wordcard__picto { width: 78%; height: 78%; object-fit: contain; }

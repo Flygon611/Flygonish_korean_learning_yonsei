@@ -124,9 +124,19 @@
 
     /* Left: a picture for the lesson and the word itself, large. Right: what it
        means and how the textbook uses it. */
+    /* An exact pictogram for THIS word beats a scene chosen for its theme: it
+       was picked concept by concept and looked at. The theme art stays as the
+       fallback for words outside the reviewed set. */
+    // the resolver sometimes returns a different base (약 -> 약하다), so the
+    // token as typed gets a second chance before falling back to theme art
+    const picto = (window.YK_PICTO || {})[entry ? entry.ko : word] ||
+                  (window.YK_PICTO || {})[word];
     const theme = themeOf(entry);
     const left = h('div', { class: 'wordcard__side' },
-      theme ? h('div', { class: 'wordcard__art' }, ui.artImg(theme, 0, 'wordcard__img')) : null,
+      picto ? h('div', { class: 'wordcard__art wordcard__art--picto' },
+        h('img', { src: picto, alt: '', class: 'wordcard__picto', loading: 'lazy' }))
+        : theme ? h('div', { class: 'wordcard__art' },
+            ui.artImg(theme, 0, 'wordcard__img')) : null,
       h('div', { class: 'wordcard__big' }, entry ? entry.ko : word),
       h('div', { class: 'wordcard__zh' }, entry ? entry.zh : '词库里没有这个词'),
       entry && entry.lesson ? ui.chip('第 ' + entry.lesson + ' 课', 'chip--acc') : null,

@@ -56,6 +56,19 @@ python3 tools/bump-assets.py
 
 ## 插图
 
+**词条页优先用 OpenMoji 象形图**（`js/data/picto.js`，127 个常用名词）。
+每个韩语词对应一个 SVG 文件——确定性映射，不经过搜索，所以不会出现
+"歌手配龙卷风"这类错配，体积也只有约 5 KB 一张（irasutoya 的 PNG 是
+100–160 KB）。许可 CC BY-SA 4.0，见 CREDITS.md。
+
+挑选方式：先用 Unicode CLDR 的韩文 emoji 名称生成候选，拼成接触表**逐个看过**，
+再自己定稿。CLDR 候选约七成正确（`가방→💰`、`모자→👳`、`기사→🐛` 都不对），
+所以定稿是人做的，不是自动的。
+
+映射不到的词回落到 irasutoya 的主题插图：
+
+
+
 词条页左栏的插图来自 irasutoya。**每一张都经过目视核对才登记**——用
 `tools/fetch_irasutoya_candidates.py` 抓候选，拼成接触表看过，确认无误才写进
 `js/data/art.js` 与 `js/views/word.js` 的主题规则。
