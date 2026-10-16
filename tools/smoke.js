@@ -336,6 +336,22 @@ go('#/vocab?mode=flash');
   check('word page: a noun has no conjugation section',
     window.document.querySelectorAll('#view .conj__row').length === 0);
 
+  /* findVerb used to accept the bare stem as a hit, which matched ANY entry:
+     않습니다 reduced 않 to 아 and returned the interjection 아 "啊". A verb
+     lookup must return a verb. */
+  {
+    const look = (w) => { const h = YK.dict.lookup(w); return h && h.entry ? h.entry.ko : null; };
+    check('dict: a verb ending never resolves to a non-verb',
+      look('않습니다') !== '아' && look('않다') !== '아',
+      look('않습니다') + ' / ' + look('않다'));
+    check('dict: 않습니다 resolves to 않다', look('않습니다') === '않다', look('않습니다'));
+    const good = { 먹지: '먹다', 먹습니다: '먹다', 갔어요: '가다', 했어요: '하다',
+      배웁니다: '배우다', 좋아요: '좋다', 전화해: '전화하다' };
+    let bad = 0;
+    for (const [w, want] of Object.entries(good)) if (look(w) !== want) { bad++; console.log('   ', w, '->', look(w), 'want', want); }
+    check('dict: ordinary inflections still resolve', bad === 0, bad + ' wrong');
+  }
+
   // 3. conjugation is reachable and complete
   const c = YK.conj.conjugate('먹다');
   check('conj: a verb produces all ten forms', c && c.forms.length === 10, c && c.forms.length);

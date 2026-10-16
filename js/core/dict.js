@@ -13,6 +13,7 @@
   const EXTRA = [
     ['좀', '一点 / 请'], ['제', '我的（저의）'], ['수', '（能做/不能做的）办法'],
     ['한', '一个'], ['아', '啊'], ['그래요', '是啊 / 好的'],
+    ['않다', '不（먹지 않습니다）', 4],
     ['비빔밥', '拌饭'], ['꽃', '花'], ['모두', '都 / 全部'], ['시월', '十月'],
     ['인분', '人份'], ['싶다', '想（고 싶다）'], ['어떻다', '怎么样'],
     ['매일', '每天'], ['요일', '星期'], ['한번', '一次'], ['다음에', '下次'],
@@ -134,7 +135,8 @@
         }
       }
     }
-    for (const [ko, zh] of EXTRA) put(ko, zh, 0, 'extra');
+    // a third element marks the lesson where the word is actually taught
+    for (const [ko, zh, lesson] of EXTRA) put(ko, zh, lesson || 0, 'extra');
     for (const p of (window.YK_CAST || [])) {
       put(p.ko, `${p.zh} · ${p.jobZh}`, 0, 'cast');
       put(p.short, `${p.zh} · ${p.jobZh}`, 0, 'cast');
@@ -251,9 +253,14 @@
     if (IRREGULAR[stem] && idx[IRREGULAR[stem]]) return idx[IRREGULAR[stem]];
     for (const base of stemVariants(stem)) {
       if (IRREGULAR[base] && idx[IRREGULAR[base]]) return idx[IRREGULAR[base]];
-      const cands = [base + '다', base + '하다', base];
+      const cands = [base + '다', base + '하다'];
       if (/하$/.test(base)) cands.push(base.slice(0, -1) + '하다');
       for (const c of cands) if (idx[c]) return idx[c];
+      /* The bare stem used to be accepted too, and that matched ANY entry:
+         않습니다 reduced `않` to `아` and cheerfully returned the interjection
+         아 "啊". findVerb promises a predicate, so a bare stem only counts when
+         it really is one. */
+      if (idx[base] && /다$/.test(base)) return idx[base];
     }
     return null;
   }
