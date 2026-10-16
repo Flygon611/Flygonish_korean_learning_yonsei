@@ -138,11 +138,18 @@
   transition: transform 1150ms var(--ease-in-out);
   will-change: transform, opacity;
 }
-/* a letter the new form needs: waits above-left, small and invisible, then
-   drops in — staggered left to right by the caller */
+/* a letter the new form needs: waits just outside, small and invisible, then
+   drops in — staggered left to right by the caller.
+   A 받침 lives at the BOTTOM of a syllable, so it rises from below; an initial
+   or a vowel comes down from above. Sending everything from the top made a
+   받침 look like it was falling out of the previous syllable. */
 .mflyer.is-add {
   opacity: 0;
   transform: translate(-50%, -50%) translate(-.3em, -1.15em) scale(.6);
+}
+.mflyer.is-add[data-role="jong"],
+.mflyer.is-add[data-role="jong2"] {
+  transform: translate(-50%, -50%) translate(-.1em, 1.2em) scale(.6);
 }
 /* a letter the new form does not need: slips away */
 .mflyer.is-out { transition: transform 520ms var(--ease-out), opacity 420ms var(--ease-soft); }

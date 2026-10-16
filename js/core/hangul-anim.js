@@ -386,8 +386,10 @@
         // how many syllables the word gains; the tail shifts by that much
         const delta = to.length - from.length;
         const opening = delta !== 0 ? 280 : 0;
+        // how many of the middle syllables are shared positionally
+        const paired = Math.min(midFrom.length, midTo.length);
         const moveMs = 560, dropMs = 520;
-        const newCount = midTo.length - Math.min(midFrom.length, midTo.length);
+        const newCount = midTo.length - paired;
         const moveDone = Math.max(1150, opening + Math.max(0, newCount - 1) * 90 + dropMs);
 
         const place = (L) => ({
@@ -418,16 +420,17 @@
            is worth showing. 다 -> 세 shares nothing — that syllable was simply
            replaced, and splitting it would put a pile of loose jamo on screen,
            which is exactly what we ruled out earlier. */
-        const taken = [];
-        for (let i = 0; i < Math.min(midFrom.length, midTo.length); i++) {
+        const taken = [];      // old glyph stays; only a letter or two changes
+        const replaced = [];   // the syllable itself is swapped for another one
+        for (let i = 0; i < paired; i++) {
           const cell = prefix + i;
           const o = oldL.filter((L) => L.cell === cell);
           const n = newL.filter((L) => L.cell === cell);
           const shared = o.filter((a) => n.some((b) => b.role === a.role && b.glyph === a.glyph));
-          if (!shared.length) continue;
           const churn = o.filter((L) => !moves.some((m) => m[0] === L)).length +
                         n.filter((L) => !moves.some((m) => m[1] === L)).length;
-          if (churn <= 2) taken.push(cell);
+          if (shared.length && churn <= 2) taken.push(cell);
+          else replaced.push(cell);
         }
 
         const travel = ([o, n]) =>
@@ -456,16 +459,23 @@
            throughout. Inserting 니 into 배우다 pushes the trailing 다 right, so
            it starts where it already is and slides over; a syllable that did not
            exist before drops in from above in one piece — never taken apart. */
+        /* Which old syllables have to go: the ones whose slot was swapped for a
+           different syllable (가다 → 갑니까? replaces 다 with 니까?), and any left
+           over when the new form is shorter. Leaving 다 on screen let it sit on
+           top of the syllable that should own that position. */
+        const goneCells = replaced.concat(
+          Array.from({ length: Math.max(0, midFrom.length - paired) },
+                     (_, k) => prefix + paired + k));
+
         const fromSyls = Array.from(fromRow.children);
         fromSyls.forEach((el, i) => {
           if (i >= from.length - suffix && suffix > 0 && delta !== 0) {
             el.style.transition = 'transform ' + moveMs + 'ms var(--ease-in-out)';
             el.style.transform = 'translateX(' + (delta * W * fs) + 'px)';
             el.style.willChange = 'transform';
-          } else if (i >= prefix + midTo.length && i < prefix + midFrom.length) {
-            // a syllable that only existed in the old word slips out
-            el.style.transition = 'transform 420ms var(--ease-out), opacity 380ms var(--ease-soft)';
-            el.style.transform = 'translateY(-1.15em) scale(.72)';
+          } else if (goneCells.indexOf(i) >= 0) {
+            el.style.transition = 'transform 420ms var(--ease-out), opacity 340ms var(--ease-soft)';
+            el.style.transform = 'translateY(' + (i < prefix + midTo.length ? 1.15 : -1.15) + 'em) scale(.72)';
             el.style.opacity = '0';
           }
         });
@@ -474,8 +484,9 @@
         // has had a chance to move out of the way
         fromRow.style.position = 'relative';
         const dropped = [];
-        for (let i = Math.min(midFrom.length, midTo.length); i < midTo.length; i++) {
+        for (let i = 0; i < midTo.length; i++) {
           const idx = prefix + i;
+          if (i < paired && replaced.indexOf(idx) < 0) continue;  // the old glyph carries it
           const el = h('span', { class: 'msyl is-new', 'data-ch': toText[idx] }, toText[idx]);
           el.style.cssText = 'position:absolute;left:' + (idx * W) + 'em;top:0;opacity:0;' +
             'transform:translateY(-1.15em) scale(.72);will-change:transform,opacity';

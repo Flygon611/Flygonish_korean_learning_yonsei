@@ -136,6 +136,31 @@ const EDGE = '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge';
     ok('无关音节之间不产生搬家', n.arrows === 0 && n.movers === 0, JSON.stringify(n));
   }
 
+  /* The hand-written banks had no lesson tags, so 제1과 served questions built
+     from 제8과 vocabulary. Checked here rather than in jsdom, where the
+     dictionary analyser does not behave the same. */
+  console.log('练习：按课过滤');
+  await go('#/practice?mode=particle&l=1');
+  const pool = await page.evaluate(() => {
+    const need = window.YK.views.practice.lessonNeeded;
+    const asText = (v) => (Array.isArray(v) ? v.join('') : String(v == null ? '' : v));
+    const banks = {
+      particle: (q) => asText(q.s),
+      conjugation: (q) => asText(q.s).split('+')[0],
+      translate: (q) => asText(q.ko),
+    };
+    let late = 0, kept = 0, total = 0;
+    for (const [mode, textOf] of Object.entries(banks)) {
+      for (const q of window.YK_EXERCISES[mode].items) {
+        total++;
+        if (need(textOf(q)) > 1) late++; else kept++;
+      }
+    }
+    return { late, kept, total };
+  });
+  ok('后面课次的题被识别出来', pool.late > 0, JSON.stringify(pool));
+  ok('第1课只留已学过的题', pool.kept > 0 && pool.kept < pool.total, JSON.stringify(pool));
+
   console.log('布局');
   for (const [hash, name] of [['#/', '首页'], ['#/hangul', '字母'], ['#/phonetics', '音变'],
     ['#/grammar', '语法'], ['#/practice', '练习'], ['#/cast', '人物'],

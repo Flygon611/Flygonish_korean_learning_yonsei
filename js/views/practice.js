@@ -241,9 +241,103 @@
     return out;
   }
 
+  /* ---------------------------------------------------- lección filtering
+     The hand-written banks were written without a lesson tag, so picking 제1과
+     still served questions built from 제8과 vocabulary — material the learner
+     has not met. Each question is therefore tagged with the LATEST lesson among
+     the words it uses: a question is fair game once every word in it has been
+     taught. Cheap to compute once, and it stays correct if the corpus changes. */
+  let WORD_LESSON = null;
+  function wordLesson() {
+    if (WORD_LESSON) return WORD_LESSON;
+    WORD_LESSON = {};
+    const note = (ko, no) => { if (ko && WORD_LESSON[ko] === undefined) WORD_LESSON[ko] = no; };
+    // first pass: the vocabulary lists, which are the explicit curriculum
+    for (const les of L.lessons) {
+      for (const sec of les.sections) {
+        for (const w of sec.vocab || []) note(w.ko, les.no);
+      }
+    }
+    // second pass: words that only ever turn up in the textbook's own sentences
+    // (살다, 모르다, 예쁘다 …) still have a lesson — the first one that uses them.
+    // Kept in its own try: if analysing the whole book throws for any reason,
+    // the vocabulary map above is still perfectly usable, and the outer catch
+    // must not silently downgrade every question to "no lesson".
+    try {
+    for (const les of L.lessons) {
+      for (const sec of les.sections) {
+        const texts = [];
+        for (const d of sec.dialogue) if (d.ko) texts.push(d.ko);
+        for (const g of sec.grammar) for (const e of g.examples) texts.push(e.ko);
+        for (const t of texts) {
+          try {
+            for (const tok of YK.dict.analyze(t)) if (tok.entry) note(tok.entry.ko, les.no);
+          } catch (e) { /* one odd sentence must not sink the whole map */ }
+        }
+      }
+    }
+    } catch (e) { /* keep whatever the vocabulary pass produced */ }
+    return WORD_LESSON;
+  }
+
+  // prompts are sometimes ['가다 + -ㅂ니다  →  ', ''] rather than a plain string
+  const asText = (v) => (Array.isArray(v) ? v.join('') : String(v == null ? '' : v));
+
+  /* Some prompts are pure endings — 살다 + -ㅂ니다, 예쁘다 + -어요 — and their
+     words never appear in the textbook, so no vocabulary can place them. The
+     ending itself can: each grammar pattern carries the lesson that teaches it. */
+  let ENDING_LESSON = null;
+  function endingLessons() {
+    if (ENDING_LESSON) return ENDING_LESSON;
+    ENDING_LESSON = [];
+    for (const L of L.lessons) {
+      for (const sec of L.sections) {
+        for (const g of sec.grammar) {
+          for (const part of String(g.pattern || '').split('/')) {
+            const e = part.trim();
+            if (e.length > 1) ENDING_LESSON.push([e, L.no]);
+          }
+        }
+      }
+    }
+    // longest first, so -습니다 is tried before 습니다
+    ENDING_LESSON.sort((a, b) => b[0].length - a[0].length);
+    return ENDING_LESSON;
+  }
+
+  const NEEDED = new Map();
+  function lessonNeeded(text) {
+    if (NEEDED.has(text)) return NEEDED.get(text);
+    let need = 0;
+    try {
+      for (const tok of YK.dict.analyze(text)) {
+        if (!tok.entry) continue;
+        const ln = wordLesson()[tok.entry.ko];
+        if (ln && ln > need) need = ln;
+      }
+      if (!need) {
+        for (const [ending, no] of endingLessons()) {
+          if (text.indexOf(ending) >= 0 && no > need) need = no;
+        }
+      }
+    } catch (e) { need = 0; }
+    NEEDED.set(text, need);
+    return need;
+  }
+
+  /* keep a question only if everything in it has been taught by now */
+  function withinLesson(items, ctx, textOf) {
+    const no = ctx && ctx.lessonNo;
+    if (!no) return items;
+    return items.filter((q) => {
+      const need = lessonNeeded(textOf(q));
+      return need === 0 || need <= no;
+    });
+  }
+
   /* -------------------------------------------------------------- builders */
   const builders = {
-    particle: () => YK.shuffle(EX.particle.items).map((q) => ({
+    particle: (ctx) => YK.shuffle(withinLesson(EX.particle.items, ctx, (q) => q.s.join(''))).map((q) => ({
       render: choiceQuestion(
         h('div', { class: 'prompt' },
           h('div', { class: 'prompt__sentence' }, q.s[0],
@@ -252,11 +346,14 @@
         q.a, q.opts, { ko: true, one: true }),
     })),
 
-    conjugation: () => YK.shuffle(EX.conjugation.items).map((q) => ({
+    conjugation: (ctx) => YK.shuffle(withinLesson(EX.conjugation.items, ctx,
+      // the content is the word before the '+'; the ending after it is a label,
+      // and analysing it picked up stray matches that skewed the lesson
+      (q) => asText(q.s).split('+')[0])).map((q) => ({
       render: spellQuestion(q.s, q.a, q.zh, q.tip),
     })),
 
-    translate: () => YK.shuffle(EX.translate.items).map((q) => ({
+    translate: (ctx) => YK.shuffle(withinLesson(EX.translate.items, ctx, (q) => q.ko)).map((q) => ({
       render: choiceQuestion(
         h('div', { class: 'prompt' },
           h('div', { class: 'prompt__sentence' }, q.ko),
@@ -381,5 +478,5 @@
   }
 
   YK.views = YK.views || {};
-  YK.views.practice = { title: '练习', label: '练习', icon: '練', render };
+  YK.views.practice = { title: '练习', label: '练习', icon: '練', render , lessonNeeded, withinLesson };
 })();
