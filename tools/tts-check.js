@@ -18,19 +18,34 @@ catch (e) { ({ JSDOM } = require('/tmp/yktest/node_modules/jsdom')); }
 const calls = [];
 let now = { speaking: false, pending: false, paused: false };
 
+/* Restores the recording behaviour. Tests that deliberately break the engine
+   must call this again, or every later test observes an empty call log. */
+function useRecordingSynth() {
+  synth.speak = function (u) {
+    calls.push({ type: 'speak', text: u.text, voice: u.voice && u.voice.name, at: Date.now() });
+    now.speaking = true;
+    setTimeout(() => { now.speaking = false; u.onend && u.onend(); }, 400);
+  };
+}
+
 const synth = {
   get speaking() { return now.speaking; },
   get pending() { return now.pending; },
   get paused() { return now.paused; },
-  speak(u) {
-    calls.push({ type: 'speak', text: u.text, at: Date.now() });
-    now.speaking = true;
-    // pretend the utterance takes a moment, then finish
-    setTimeout(() => { now.speaking = false; u.onend && u.onend(); }, 400);
-  },
+  speak(u) { useRecordingSynth.call(null); return synth.speak(u); },
   cancel() { calls.push({ type: 'cancel', at: Date.now() }); now.speaking = false; now.pending = false; },
   resume() { calls.push({ type: 'resume' }); now.paused = false; },
-  getVoices() { return [{ name: 'Test Korean', lang: 'ko-KR' }]; },
+  getVoices() {
+    // fresh objects every call, like the real API
+    return [
+      { name: 'Eddy (韩语（韩国）)', lang: 'ko-KR' },
+      { name: 'Flo (韩语（韩国）)', lang: 'ko-KR' },
+      { name: 'Yuna', lang: 'ko-KR' },
+      { name: 'Microsoft 서희 Online (Natural) - Korean (Korea)', lang: 'ko-KR' },
+      { name: 'Microsoft 인준 Online (Natural) - Korean (Korea)', lang: 'ko-KR' },
+      { name: 'Microsoft Hyunsu Multilingual Online (Natural) - Korean (Korea)', lang: 'ko-KR' },
+    ];
+  },
   addEventListener() {},
 };
 
@@ -55,6 +70,28 @@ const ok = (name, cond, extra) => {
 
 (async () => {
   console.log('tts');
+  const DEFAULT_V = 'Microsoft 서희 Online (Natural) - Korean (Korea)';
+
+  /* 0. default voice choice: a real voice beats the novelty voices that the OS
+     happens to list first */
+  ok('autoPick: prefers Natural/Online over the first listed voice',
+    YK.tts._internals().voice === DEFAULT_V, YK.tts._internals().voice);
+
+  /* 0b. the two dialogue roles are filled in automatically from the voice
+     names, so the user is not left auditioning a dozen novelty voices */
+  const auto = YK.tts.assignments();
+  ok('autoAssign: male role is a Natural male voice',
+    /인준|Hyunsu|InJoon/.test(auto.male || ''), String(auto.male));
+  ok('autoAssign: female role is a Natural female voice',
+    /서희|Seohee/.test(auto.female || ''), String(auto.female));
+  ok('autoAssign: no novelty voice is auto-assigned',
+    !/Eddy|Flo|Grandma|Grandpa|Reed|Rocko|Sandy|Shelley/.test(
+      [auto.default, auto.male, auto.female].join(' ')),
+    JSON.stringify(auto));
+  const order = YK.tts.listVoices();
+  ok('picker: real voices are listed before novelty ones',
+    order.findIndex((v) => v.novelty) > order.findIndex((v) => !v.novelty),
+    order.map((v) => v.name.split(' ')[0] + (v.novelty ? '!' : '')).join(','));
 
   /* 1. idle engine: speaks straight away */
   calls.length = 0;
@@ -153,6 +190,72 @@ const ok = (name, cond, extra) => {
   ok('listVoices: flags the current one',
     YK.tts.listVoices().some((v) => v.current && v.name === V.name),
     JSON.stringify(YK.tts.listVoices()));
+
+  /* 6d. male / female roles drive different voices ------------------------ */
+  useRecordingSynth();                       // earlier tests replaced the stub
+  YK.tts.setVoice(DEFAULT_V, 'default');
+  YK.tts.setVoice('Flo (韩语（韩国）)', 'male');
+  YK.tts.setVoice('Eddy (韩语（韩国）)', 'female');
+  const a = YK.tts.assignments();
+  ok('roles: stored separately from the default',
+    a.default === DEFAULT_V && a.male === 'Flo (韩语（韩国）)' && a.female === 'Eddy (韩语（韩国）)',
+    JSON.stringify(a));
+
+  calls.length = 0;
+  now.speaking = false;
+  YK.tts.speak('안녕하십니까', null, { role: 'male' });
+  YK.tts.speak('네, 안녕하십니까', null, { role: 'female' });
+  YK.tts.speak('기본 목소리', null, null);
+  const byText = {};
+  for (const c of calls.filter((x) => x.type === 'speak')) byText[c.text] = c.voice;
+  ok('roles: male line uses the male voice', byText['안녕하십니까'] === 'Flo (韩语（韩国）)', JSON.stringify(byText));
+  ok('roles: female line uses the female voice', byText['네, 안녕하십니까'] === 'Eddy (韩语（韩国）)');
+  ok('roles: a line without a role uses the default', byText['기본 목소리'] === DEFAULT_V,
+    JSON.stringify(byText));
+
+  /* 6e. a role set to null falls back to the default rather than going silent */
+  YK.tts.setVoice(null, 'male');
+  calls.length = 0;
+  YK.tts.speak('역할 없음', null, { role: 'male' });
+  ok('roles: unset role falls back to the default voice',
+    calls.find((c) => c.type === 'speak').voice === DEFAULT_V,
+    JSON.stringify(calls.filter((c) => c.type === 'speak')));
+
+  /* 6f. a voice caught playing silently is remembered and avoided ---------- */
+  useRecordingSynth();
+  YK.tts.forgetSilent();
+  YK.tts.setVoice('Yuna', 'default');
+  ok('silent memory: Yuna can be selected explicitly', YK.tts._internals().voice === 'Yuna');
+  now.speaking = false;
+  synth.speak = function (u) {
+    now.speaking = true;
+    setTimeout(() => { now.speaking = false; u.onstart && u.onstart(); u.onend && u.onend(); }, 5);
+  };
+  YK.tts.speak('안녕하세요 저는 학생입니다', null, null);   // ends almost instantly
+  await sleep(140);
+  ok('silent memory: the voice is recorded',
+    JSON.parse(window.localStorage.getItem('yk1.voice.silent') || '[]').indexOf('Yuna') >= 0,
+    window.localStorage.getItem('yk1.voice.silent'));
+  ok('silent memory: the picker marks it',
+    YK.tts.listVoices().some((v) => v.name === 'Yuna' && v.silent),
+    JSON.stringify(YK.tts.listVoices()));
+
+  /* 6g. sequence: one voice per line, all queued in the same gesture -------- */
+  useRecordingSynth();
+  YK.tts.setVoice(DEFAULT_V, 'default');
+  YK.tts.setVoice('Flo (韩语（韩国）)', 'male');
+  YK.tts.setVoice('Eddy (韩语（韩国）)', 'female');
+  calls.length = 0;
+  YK.tts.speakSequence([
+    { text: '첫 문장', role: 'female' },
+    { text: '둘째 문장', role: 'male' },
+    { text: '셋째 문장', role: null },
+  ]);
+  const seq = calls.filter((c) => c.type === 'speak');
+  ok('sequence: all lines are queued at once', seq.length === 3, JSON.stringify(seq.map((c) => c.text)));
+  ok('sequence: each line gets its own voice',
+    seq[0].voice !== seq[1].voice && seq[0].voice === 'Eddy (韩语（韩国）)' && seq[1].voice === 'Flo (韩语（韩国）)',
+    JSON.stringify(seq.map((c) => c.voice)));
 
   /* 7. diagnose() reports the concrete state */
   const d = await YK.tts.diagnose();

@@ -63,17 +63,6 @@
 /* ------------------------------------------------------------ page: hangul */
 
 .jamo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: var(--s2); }
-.jamo {
-  display: flex; flex-direction: column; align-items: center; gap: 3px;
-  padding: 11px 6px; border-radius: var(--r-md);
-  background: var(--surface); border: 1px solid var(--line);
-  cursor: pointer;
-  transition: transform var(--d-press) var(--ease-out),
-              border-color var(--d-fast) var(--ease-soft),
-              background-color var(--d-fast) var(--ease-soft);
-}
-.jamo:hover { border-color: var(--accent); background: var(--accent-soft); }
-.jamo:active { transform: scale(.955); }
 .jamo__ch { font-family: var(--font-ko-serif); font-size: 25px; line-height: 1.15; }
 .jamo__ro { font-size: 11.5px; color: var(--accent); font-weight: 600; }
 .jamo__zh { font-size: 10.5px; color: var(--faint); }

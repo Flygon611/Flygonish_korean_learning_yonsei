@@ -18,9 +18,13 @@ const EDGE = '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge';
     if (!cond) fails.push(name);
   };
 
+  /* The first load of a cold browser is slow (fonts, 200+ local images), and a
+     fixed short wait makes this suite flaky rather than informative. */
   async function go(hash) {
-    await page.goto(BASE + '/index.html' + hash, { waitUntil: 'networkidle2' });
-    await new Promise((r) => setTimeout(r, 500));
+    await page.goto(BASE + '/index.html' + hash, { waitUntil: 'networkidle2', timeout: 45000 });
+    await page.waitForFunction(() => window.YK && window.YK.router && window.YK.router.current(),
+      { timeout: 20000 });
+    await new Promise((r) => setTimeout(r, 700));
   }
 
   const popState = () => page.evaluate(() => {
@@ -30,14 +34,14 @@ const EDGE = '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge';
                  left: p.style.left, top: p.style.top } : null;
   });
   const click = async (sel) => {
-    await page.waitForSelector(sel, { timeout: 5000 });
+    await page.waitForSelector(sel, { timeout: 20000 });
     await page.click(sel);
     await new Promise((r) => setTimeout(r, 400));
   };
 
   console.log('查词页');
   await go('#/lookup?q=' + encodeURIComponent('저는 학생입니다.'));
-  await page.waitForSelector('#view .tokcard');
+  await page.waitForSelector('#view .tokcard', { timeout: 20000 });
   await page.click('#view .tokcard');
   await new Promise((r) => setTimeout(r, 500));
   let pop = await popState();
@@ -62,7 +66,7 @@ const EDGE = '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge';
 
   console.log('单词页');
   await go('#/vocab?l=1&mode=list');
-  await page.waitForSelector('#view .word-row');
+  await page.waitForSelector('#view .word-row', { timeout: 20000 });
   await page.click('#view .word-row');
   await new Promise((r) => setTimeout(r, 500));
   pop = await popState();
@@ -71,7 +75,7 @@ const EDGE = '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge';
 
   console.log('课文页');
   await go('#/reading?l=1&s=1');
-  await page.waitForSelector('#view .dlg__ko .w');
+  await page.waitForSelector('#view .dlg__ko .w', { timeout: 20000 });
   const wordBox = await page.$eval('#view .dlg__ko .w', (el) => {
     const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height };
   });

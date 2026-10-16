@@ -1,3 +1,32 @@
+/* jamo card: the letter and its example word are two separate buttons --- */
+.jamo { display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); }
+.jamo__main {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 11px 6px 8px; background: none; border: 0; cursor: pointer; width: 100%;
+  transition: background-color var(--d-fast) var(--ease-soft), transform var(--d-press) var(--ease-out);
+}
+.jamo__main:hover { background: var(--accent-soft); }
+.jamo__main:active { transform: scale(.965); }
+.jamo__ex {
+  width: 100%; padding: 4px 6px; cursor: pointer;
+  background: var(--surface-2); border: 0; border-top: 1px solid var(--line);
+  font-family: var(--font-ko-serif); font-size: 12px; color: var(--muted);
+  transition: background-color var(--d-fast) var(--ease-soft), color var(--d-fast) var(--ease-soft);
+}
+.jamo__ex:hover { background: var(--accent-soft); color: var(--accent); }
+
+/* voice role picker in the speech self-test --- */
+.vrow { display: flex; align-items: center; gap: var(--s2); margin-bottom: 7px; flex-wrap: wrap; }
+.vrow__label { font-size: 12.5px; min-width: 62px; color: var(--ink-2); }
+.vsel {
+  min-width: 190px; max-width: 100%; padding: 6px 10px;
+  font: inherit; font-size: 12.5px; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--r-sm);
+  cursor: pointer;
+}
+.vsel:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
 /* cast portraits (cropped from the textbook character page) --- */
 .castimg { object-fit: contain; border-radius: 12px; background: #fff; }
 .person .castimg { border-radius: 16px; border: 1px solid var(--line); }

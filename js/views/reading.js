@@ -11,6 +11,16 @@
   const castFor = (name) => (window.YK_CAST || []).find((c) => c.short === name || c.ko === name);
   const castColor = (name) => (castFor(name) || {}).color || 'var(--accent)';
 
+  /* A dialogue alternates voices when male/female voices are set in 发音自检;
+     otherwise everything uses the one default voice. */
+  function role(name) {
+    if (!name) return null;
+    const c = castFor(name);
+    if (c && c.gender) return c.gender === 'm' ? 'male' : 'female';
+    const g = (window.YK_SPEAKER_GENDER || {})[name];
+    return g ? (g === 'm' ? 'male' : 'female') : null;
+  }
+
   let prefs = { zh: true, ko: true };
 
   function wordTap(raw, anchor) {
@@ -40,7 +50,7 @@
     if (d.type === 'heading') {
       return h('div', { class: 'dlg__heading' },
         h('div', { class: 'ko row', style: { gap: '10px' } },
-          ui.koreanWords(d.ko, wordTap), YK.tts.button(d.ko)),
+          ui.koreanWords(d.ko, wordTap), YK.tts.button(d.ko, { role: role(d.speaker) })),
         d.zh ? h('div', { class: 'zh', style: { marginTop: '4px' } }, d.zh) : null);
     }
     const right = d.speaker && ['리에', '마리아', '미선', '정희'].includes(d.speaker);
@@ -61,9 +71,10 @@
         h('div', { class: 'dlg__ko' }, ui.koreanWords(d.ko, wordTap)),
         d.zh ? h('div', { class: 'dlg__zh' }, d.zh) : null,
         h('div', { class: 'dlg__tools' },
-          YK.tts.button(d.ko),
+          YK.tts.button(d.ko, { role: role(d.speaker) }),
           h('button', { class: 'btn btn--ghost btn--sm', type: 'button',
-            onclick: () => { YK.tts.speak(d.ko); } }, YK.icon('sound'), '整句朗读'),
+            onclick: () => { YK.tts.speak(d.ko, null, { role: role(d.speaker) }); } },
+            YK.icon('sound'), '整句朗读'),
           h('button', { class: 'btn btn--ghost btn--sm', type: 'button',
             onclick: () => YK.router.go('#/lookup?q=' + encodeURIComponent(d.ko)) },
             YK.icon('magnifier'), '拆句'))));
@@ -187,8 +198,9 @@
           modeBtn('韩文原文', prefs.ko, () => { prefs.ko = !prefs.ko; }),
           h('button', { class: 'btn btn--sm', type: 'button',
             onclick: () => {
-              const all = sec.dialogue.filter((d) => d.type === 'line').map((d) => d.ko).join(' ');
-              if (all) YK.tts.speak(all);
+              const lines = sec.dialogue.filter((d) => d.type === 'line')
+                .map((d) => ({ text: d.ko, role: role(d.speaker) }));
+              if (lines.length) YK.tts.speakSequence(lines);
             } }, YK.icon('control_play'), '连读全节'),
         ],
       }),

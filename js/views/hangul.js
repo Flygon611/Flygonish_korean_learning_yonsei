@@ -7,18 +7,27 @@
   const { ui } = YK;
   const D = window.YK_HANGUL;
 
+  /* Tapping the letter reads the LETTER (vowels as their own syllable,
+     consonants by name: ㅂ -> 비읍). The example word gets its own small
+     button, so the two are never confused. */
   function jamoButton(j, onTap) {
-    const b = h('button', { class: 'jamo', type: 'button',
-      'aria-label': j.ch + ' ' + j.ro + (j.zh ? ' ' + j.zh : '') },
+    const letter = h('button', { class: 'jamo__main', type: 'button',
+      'aria-label': '读字母 ' + j.ch + ' ' + j.ro },
       h('span', { class: 'jamo__ch' }, j.ch),
       h('span', { class: 'jamo__ro' }, j.ro),
       j.name ? h('span', { class: 'jamo__zh' }, j.name)
              : (j.zh ? h('span', { class: 'jamo__zh' }, j.zh) : null));
-    b.addEventListener('click', () => {
-      YK.tts.speak(j.ex ? j.ex[0] : j.ch, b);
-      onTap && onTap(j, b);
+    letter.addEventListener('click', () => {
+      YK.tts.speak(j.say || j.ch, letter);
+      onTap && onTap(j, letter);
     });
-    return b;
+
+    const ex = j.ex && j.ex[0];
+    const exBtn = ex ? h('button', { class: 'jamo__ex', type: 'button',
+      title: '例词：' + ex, 'aria-label': '读例词 ' + ex }, ex) : null;
+    if (exBtn) exBtn.addEventListener('click', () => YK.tts.speak(ex, exBtn));
+
+    return h('div', { class: 'jamo' }, letter, exBtn);
   }
 
   function jamoSection(title, sub, list, slug) {
@@ -45,23 +54,50 @@
       YK.clear(out);
       out.style.display = 'block';
       const voices = YK.tts.listVoices();
+      const assign = YK.tts.assignments();
+
+      /* One <select> per role. 男声/女声 are optional: leave them on 跟随默认 and
+         the whole site uses the one default voice. */
+      function roleRow(label, roleKey, hint) {
+        const sel = h('select', { class: 'vsel', 'aria-label': label },
+          h('option', { value: '' }, roleKey === 'default' ? '（自动）' : '跟随默认'),
+          voices.map((v) => h('option', { value: v.name, selected: assign[roleKey] === v.name },
+            v.name.replace(/\s*\(.*?\)/g, '')
+            + (v.silent ? '（无声）' : '') + (v.novelty ? '（趣味）' : ''))));
+        sel.value = assign[roleKey] || '';
+        const test = h('button', { class: 'btn btn--sm', type: 'button' }, YK.icon('sound'), '试听');
+        test.addEventListener('click', () => {
+          YK.tts.setVoice(sel.value || null, roleKey);
+          const r = roleKey === 'default' ? null : roleKey;
+          YK.tts.speak('안녕하세요. 저는 학생입니다.', null, r ? { role: r } : null);
+        });
+        sel.addEventListener('change', () => {
+          YK.tts.setVoice(sel.value || null, roleKey);
+          YK.tts.speak('안녕하세요. 저는 학생입니다.', null,
+            roleKey === 'default' ? null : { role: roleKey });
+        });
+        return h('div', { class: 'vrow' },
+          h('span', { class: 'vrow__label' }, label),
+          sel, test,
+          hint ? h('span', { class: 'faint', style: { fontSize: '11px' } }, hint) : null);
+      }
+
       const picker = h('div', { style: { marginTop: '12px' } },
-        h('div', { class: 'muted', style: { fontSize: '12px', marginBottom: '7px' } },
+        h('div', { class: 'muted', style: { fontSize: '12px', marginBottom: '8px' } },
           voices.length > 1
-            ? '逐个点一下，挑一个真的能听见的（选中的会记住，下次还用这个）：'
+            ? '男声/女声已按语音名自动分配，可随时改；点「试听」逐个试。留空则跟随默认。'
             : '当前系统里只有这一个韩语语音：'),
-        h('div', { class: 'row', style: { gap: '6px' } },
-          voices.map((v) => {
-            const b = h('button', { class: 'tagbtn' + (v.current ? ' is-on' : ''), type: 'button',
-              title: v.lang }, v.name.replace(/\s*\(.*?\)/g, '') + (v.current ? ' ✓' : ''));
-            b.addEventListener('click', () => {
-              YK.tts.setVoice(v.name);
-              YK.tts.speak('안녕하세요. 저는 학생입니다.');
-              picker.querySelectorAll('.tagbtn').forEach((x) => x.classList.remove('is-on'));
-              b.classList.add('is-on');
-            });
-            return b;
-          })));
+        roleRow('默认朗读', 'default', '课文、单词、练习都用它'),
+        roleRow('男声', 'male', '제임스 · 웨이 · 민철 · 영수'),
+        roleRow('女声', 'female', '리에 · 마리아 · 미선 · 정희'),
+        h('div', { class: 'row', style: { gap: '8px', marginTop: '4px' } },
+          h('button', { class: 'btn btn--sm', type: 'button', onclick: () => {
+            try { localStorage.removeItem('yk1.voice.male'); localStorage.removeItem('yk1.voice.female'); } catch (e) {}
+            YK.tts.autoAssignRoles();
+            YK.router.render();
+          } }, '重新自动分配'),
+          h('span', { class: 'faint', style: { fontSize: '11.5px' } },
+            '带「趣味」标记的是系统自带的搞怪语音，不适合学发音')));
 
       YK.mount(out,
         h('div', { class: 'row', style: { gap: '8px', marginBottom: '8px' } },
