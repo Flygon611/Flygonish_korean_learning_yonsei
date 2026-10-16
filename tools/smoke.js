@@ -357,11 +357,19 @@ go('#/vocab?mode=flash');
   {
     const picto = window.YK_PICTO || {};
     check('picto: the map is loaded', Object.keys(picto).length > 200, Object.keys(picto).length + ' words');
-    check('picto: every entry is an openmoji asset',
-      Object.values(picto).every((p) => p.indexOf('assets/openmoji/') === 0));
-    const bad = ['하나', '둘', '이', '삼', '명', '마리', '권', '하고', '에게', '의', '자주', '가끔'];
+    check('picto: every entry points at one of our two asset folders',
+      Object.values(picto).every((p) => p.indexOf('assets/openmoji/') === 0 ||
+                                       p.indexOf('assets/picto/') === 0));
+    // numerals DO get a generated picture now (한자 for Sino, digit + 태극 for
+    // native); counters, particles and abstract adverbs still must not
+    const bad = ['명', '마리', '권', '장', '하고', '에게', '의', '자주', '가끔', '별로', '아직'];
     const wrong = bad.filter((w) => picto[w]);
-    check('picto: numbers, counters and particles have no picture', wrong.length === 0, wrong.join(','));
+    check('picto: counters, particles and adverbs have no picture', wrong.length === 0, wrong.join(','));
+    check('picto: numerals are drawn by the generator',
+      /assets\/picto\/num-sino/.test(picto['일'] || '') && /assets\/picto\/num-native/.test(picto['하나'] || ''),
+      (picto['일'] || '-') + ' / ' + (picto['하나'] || '-'));
+    check('picto: position words are drawn by the generator',
+      /assets\/picto\/dir-/.test(picto['앞'] || ''), picto['앞'] || '-');
   }
 
   // 3. conjugation is reachable and complete
