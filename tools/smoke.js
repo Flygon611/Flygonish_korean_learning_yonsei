@@ -352,6 +352,18 @@ go('#/vocab?mode=flash');
     check('dict: ordinary inflections still resolve', bad === 0, bad + ' wrong');
   }
 
+  /* Every pictogram reference must point at a file that exists, and the map
+     must stay clear of words a single picture cannot show. */
+  {
+    const picto = window.YK_PICTO || {};
+    check('picto: the map is loaded', Object.keys(picto).length > 200, Object.keys(picto).length + ' words');
+    check('picto: every entry is an openmoji asset',
+      Object.values(picto).every((p) => p.indexOf('assets/openmoji/') === 0));
+    const bad = ['하나', '둘', '이', '삼', '명', '마리', '권', '하고', '에게', '의', '자주', '가끔'];
+    const wrong = bad.filter((w) => picto[w]);
+    check('picto: numbers, counters and particles have no picture', wrong.length === 0, wrong.join(','));
+  }
+
   // 3. conjugation is reachable and complete
   const c = YK.conj.conjugate('먹다');
   check('conj: a verb produces all ten forms', c && c.forms.length === 10, c && c.forms.length);
