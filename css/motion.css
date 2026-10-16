@@ -89,16 +89,16 @@
 }
 
 /* --------------------------------------------------- hangul deconstruction
-   The word is always a real word at rest. Letters only appear in the middle of
-   the animation, and they are 黑体 so the shapes stay crisp while moving. */
+   The word is ALWAYS a real word. Only the one or two letters that actually
+   travel are ever drawn as free letters; everything else cross-fades as
+   composed glyphs, because standalone jamo are not the shapes the font uses
+   when it composes a syllable (measured: best possible overlap ~25%). */
 .morphroot { position: relative; }
 .morph2 {
-  position: relative;
-  display: flex; align-items: center;
-  min-height: 116px; padding: var(--s4) var(--s2);
+  position: relative; display: flex; align-items: center;
+  min-height: 128px; padding: var(--s4) var(--s2);
   border-radius: var(--r-md);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
+  background: var(--surface-2); border: 1px solid var(--line);
   overflow: visible;
 }
 .morphwrap { display: flex; flex-direction: column; gap: var(--s3); }
@@ -107,89 +107,61 @@
 .morph__to { color: var(--accent); font-weight: 600; }
 .morph__arrow { margin: 0 7px; color: var(--faint); }
 
+.mstage { position: relative; display: inline-block; }
 .mrow {
-  display: flex; flex-wrap: wrap; align-items: center;
-  font-family: var(--font-ko);          /* 黑体: the letters must read while moving */
+  display: flex; align-items: center;
+  font-family: var(--font-ko);
   font-size: 46px; line-height: 1; color: var(--ink);
+  white-space: pre;
 }
-.mmid { position: relative; display: inline-flex; align-items: center; }
+.mrow.is-incoming { position: absolute; left: 0; top: 0; opacity: 0; }
+.mrow.is-leaving { opacity: 0; transition: opacity 520ms var(--ease-soft); }
+.mrow.is-incoming { transition: opacity 520ms var(--ease-soft) 180ms; }
 
-/* the word as it normally looks */
 .msyl {
-  position: relative;                 /* must not depend on .msyl--open: the
-                                         letters would jump when it is removed */
-  display: inline-block; width: 1em; height: 1.32em;
-  text-align: center; line-height: 1.32em;
-  border-radius: .18em;
-  transition: color 200ms var(--ease-soft), background-color 200ms var(--ease-soft);
+  position: relative; display: inline-block;
+  width: 1em; height: 1em; text-align: center; line-height: 1em;
+  border-radius: .16em;
 }
-/* …and the syllables that are about to change are boxed off first */
-.mrow .is-target {
+/* the syllables that are about to change are boxed off first */
+.msyl.is-marked {
   outline: 1.5px dashed color-mix(in srgb, var(--accent) 60%, transparent);
-  outline-offset: 1px;
+  outline-offset: 2px;
   background: color-mix(in srgb, var(--accent) 7%, transparent);
 }
-.morph2.is-done .is-target { outline-color: transparent; background: transparent; }
 
-.msyl--open { background: transparent; color: transparent; }
-.msyl--open.is-target { background: color-mix(in srgb, var(--accent) 7%, transparent); }
-
-/* the composed syllable stays put underneath and dissolves as the letters
-   arrive, so the eye never sees the arrangement "jump" */
-.msyl__glyph {
-  position: absolute; inset: 0;
-  display: grid; place-items: center;
-  color: var(--ink);
-  /* the finished glyph appears only after the letters have started leaving,
-     otherwise the two overlap and read as a double exposure */
-  transition: opacity 380ms var(--ease-soft) 150ms, color 300ms var(--ease-soft);
-}
-.msyl--open .msyl__glyph { opacity: 0; transition: opacity 220ms var(--ease-soft); }
-
-/* a single letter, positioned by its centre */
-.mletter {
-  position: absolute; line-height: 1;   /* size comes from the composition box */
-  color: var(--accent); transform: translate(-50%, -50%);
-  opacity: 0;
-  transition: transform 1000ms var(--ease-in-out), opacity 300ms var(--ease-soft);
+/* a letter in flight — the only place a bare jamo appears */
+.mflyer {
+  position: absolute; z-index: 3; line-height: 1;
+  color: var(--accent); font-family: var(--font-ko);
+  transform: translate(-50%, -50%);
+  transition: transform 1150ms var(--ease-in-out);
   will-change: transform;
 }
-.msyl--open .mletter { opacity: 1; transition-delay: 90ms; }
-.mletter.is-arriving { opacity: 0; }
-.mletter.is-arriving.is-seated { opacity: 1; }
-.morph2.is-done .mletter, .morphroot.is-done .mletter { color: var(--ink); }
 
-/* the word that replaces a differently-shaped mid section fades in */
-.msyl.is-in { animation: msyl-in 420ms var(--ease-out) both; }
-@keyframes msyl-in { from { opacity: 0; } to { opacity: 1; } }
-
-/* the curved arrow that points from the old slot to the new one */
+/* the curved arrow pointing from the old slot to the new one */
 .marrow {
   position: absolute; pointer-events: none; overflow: visible;
-  color: var(--accent);
-  transition: opacity 320ms linear;
+  color: var(--accent); transition: opacity 320ms linear;
 }
 .marrow.is-out { opacity: 0; }
 .marrow__path {
-  fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round;
-  marker-end: url(#ykarrowhead);
-  opacity: .85;
+  fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round;
+  marker-end: url(#ykarrowhead); opacity: .9;
 }
 
 /* the older per-syllable box is still used by tools/smoke.js */
 .hcell {
   position: relative; display: inline-block;
-  width: 1.06em; height: 1.32em; vertical-align: middle;
+  width: 1em; height: 1em; vertical-align: middle;
 }
 .hpart {
   position: absolute; line-height: 1;
   font-family: var(--font-ko);
   transform: translate(-50%, -50%);
-  transition: transform 240ms var(--ease-out), opacity 200ms var(--ease-soft);
 }
-.hcell.is-instant .hpart { transition: none; }
 .hcell--raw { display: inline-flex; align-items: center; justify-content: center; font-size: .8em; color: var(--muted); }
 
 @media (prefers-reduced-motion: reduce) {
-  .mletter { transition-duration: .001ms; }
+  .mflyer, .mrow.is-leaving, .mrow.is-incoming { transition-duration: .001ms; }
 }

@@ -18,7 +18,11 @@
   if (!J) return;
   const { h } = YK;
 
-  const W = 1.0, H = 1.32;          // one syllable box, in em
+  /* The cell is SQUARE, and that is not cosmetic: a real syllable's ink measures
+     about 0.83 x 0.89 em (see tools/measure-ink.js), so a 1.32em-tall cell
+     stretched every decomposition ~25% too tall — which is what "缩放和位置
+     不太对" was. */
+  const W = 1.0, H = 1.0;           // one syllable box, in em
 
   /* a 겹받침 is two consonants in one slot — which is exactly what splits in
      앉아요 -> 안자요: the ㄴ stays as the 받침, the ㅈ leaves to become the next
@@ -39,18 +43,114 @@
      (uniform 0.66em letters) read as a cramped jumble instead of 앉. */
   const BOX = {
     //                cho                    jung                    jong
-    v:  { cho: [0.00, 0.06, 0.50, 0.56], jung: [0.47, 0.06, 0.53, 0.56], jong: [0.08, 0.66, 0.84, 0.30] },
-    v0: { cho: [0.00, 0.16, 0.50, 0.68], jung: [0.47, 0.16, 0.53, 0.68] },
-    h:  { cho: [0.06, 0.00, 0.88, 0.42], jung: [0.06, 0.38, 0.88, 0.30], jong: [0.08, 0.68, 0.84, 0.30] },
-    h0: { cho: [0.06, 0.08, 0.88, 0.44], jung: [0.06, 0.46, 0.88, 0.44] },
-    m:  { cho: [0.00, 0.04, 0.50, 0.54], jung: [0.48, 0.10, 0.52, 0.50], jong: [0.08, 0.66, 0.84, 0.30] },
-    m0: { cho: [0.00, 0.14, 0.50, 0.62], jung: [0.46, 0.22, 0.54, 0.62] },
+    // a vertical vowel is a full-height stroke, so it gets most of the height
+    // while the initial only occupies the upper part once a 받침 is present
+    v:  { cho: [0.02, 0.02, 0.46, 0.52], jung: [0.46, 0.02, 0.44, 0.86], jong: [0.10, 0.70, 0.80, 0.28] },
+    v0: { cho: [0.02, 0.16, 0.46, 0.62], jung: [0.46, 0.04, 0.44, 0.90] },
+    // a horizontal vowel is a wide stroke, so IT needs the width and the
+    // initial/vowel/final stack instead
+    h:  { cho: [0.06, 0.00, 0.88, 0.34], jung: [0.04, 0.28, 0.92, 0.48], jong: [0.10, 0.74, 0.80, 0.26] },
+    h0: { cho: [0.06, 0.04, 0.88, 0.40], jung: [0.04, 0.44, 0.92, 0.52] },
+    m:  { cho: [0.02, 0.02, 0.44, 0.50], jung: [0.46, 0.06, 0.44, 0.80], jong: [0.10, 0.70, 0.80, 0.28] },
+    m0: { cho: [0.02, 0.14, 0.44, 0.60], jung: [0.46, 0.16, 0.44, 0.80] },
   };
 
-  /* a 받침 is drawn smaller in a real syllable; the rest fill their box */
-  const SIZE = { cho: 0.98, jung: 0.94, jong: 0.70 };
+  /* Measured ink of each jamo as a fraction of its em box (canvas, 200px).
+     The numbers differ wildly — ㅇ is 0.57 wide by 0.51 tall, ㅏ is 0.30 by
+     0.90, ㄹ is 0.59 by 0.50 — so one font-size for every piece cannot work:
+     one part overflows its slot while another floats in the middle of it.
+     Sizes are derived from this table instead. */
+  const INK = {
+    cho: {
+    'ㄱ':[0.570,0.480],
+    'ㄲ':[0.680,0.480],
+    'ㄴ':[0.580,0.475],
+    'ㄷ':[0.570,0.485],
+    'ㄸ':[0.620,0.480],
+    'ㄹ':[0.590,0.500],
+    'ㅁ':[0.570,0.480],
+    'ㅂ':[0.570,0.495],
+    'ㅃ':[0.630,0.485],
+    'ㅅ':[0.650,0.510],
+    'ㅆ':[0.745,0.475],
+    'ㅇ':[0.570,0.505],
+    'ㅈ':[0.615,0.495],
+    'ㅉ':[0.755,0.510],
+    'ㅊ':[0.615,0.570],
+    'ㅋ':[0.585,0.505],
+    'ㅌ':[0.580,0.485],
+    'ㅍ':[0.620,0.490],
+    'ㅎ':[0.610,0.590]
+    },
+    jung: {
+    'ㅏ':[0.300,0.895],
+    'ㅐ':[0.325,0.895],
+    'ㅑ':[0.295,0.895],
+    'ㅒ':[0.320,0.895],
+    'ㅓ':[0.300,0.895],
+    'ㅔ':[0.430,0.895],
+    'ㅕ':[0.305,0.895],
+    'ㅖ':[0.435,0.895],
+    'ㅗ':[0.820,0.450],
+    'ㅘ':[0.825,0.895],
+    'ㅙ':[0.765,0.895],
+    'ㅚ':[0.700,0.900],
+    'ㅛ':[0.820,0.470],
+    'ㅜ':[0.820,0.465],
+    'ㅝ':[0.750,0.895],
+    'ㅞ':[0.775,0.895],
+    'ㅟ':[0.735,0.895],
+    'ㅠ':[0.820,0.465],
+    'ㅡ':[0.820,0.075],
+    'ㅢ':[0.730,0.895],
+    'ㅣ':[0.090,0.895]
+    },
+    jong: {
+    'ㄱ':[0.570,0.480],
+    'ㄲ':[0.680,0.480],
+    'ㄳ':[0.715,0.495],
+    'ㄴ':[0.580,0.475],
+    'ㄵ':[0.655,0.495],
+    'ㄶ':[0.635,0.520],
+    'ㄷ':[0.570,0.485],
+    'ㄹ':[0.590,0.500],
+    'ㄺ':[0.640,0.485],
+    'ㄻ':[0.655,0.485],
+    'ㄼ':[0.655,0.485],
+    'ㄽ':[0.705,0.495],
+    'ㄾ':[0.660,0.485],
+    'ㄿ':[0.665,0.485],
+    'ㅀ':[0.660,0.520],
+    'ㅁ':[0.570,0.480],
+    'ㅂ':[0.570,0.495],
+    'ㅄ':[0.700,0.495],
+    'ㅅ':[0.650,0.510],
+    'ㅆ':[0.745,0.475],
+    'ㅇ':[0.570,0.505],
+    'ㅈ':[0.615,0.495],
+    'ㅊ':[0.615,0.570],
+    'ㅋ':[0.585,0.505],
+    'ㅌ':[0.580,0.485],
+    'ㅍ':[0.620,0.490],
+    'ㅎ':[0.610,0.590]
+    },
+  };
 
-  const centreOf = (box) => [box[0] + box[2] / 2, box[1] + box[3] / 2];
+  /* the largest size at which this glyph's ink still fits its slot */
+  function fit(glyph, role, boxW, boxH) {
+    const table = INK[role] || INK.cho;
+    const ink = table[glyph] || INK.cho[glyph] || [0.60, 0.50];
+    return Math.min(boxW / ink[0], boxH / ink[1]) * 0.94;
+  }
+
+  /* Measured by rendering both into the real DOM and diffing the ink boxes, the
+     decomposition already lines up with the composed glyph, so no correction. */
+  const Y_SHIFT = 0;
+
+  /* slot sizes are fractions of the cell; the cell is W em wide, H em tall */
+  const slotSize = (b) => [b[2] * W, b[3] * H];
+
+  const centreOf = (box) => [box[0] + box[2] / 2, box[1] + box[3] / 2 + Y_SHIFT];
 
   function boxesFor(ch) {
     const p = J.split(ch);
@@ -58,17 +158,21 @@
     const layout = J.layoutOf(ch);
     const set = p.jong ? BOX[layout] : BOX[layout + '0'] || BOX[layout];
     const out = [];
-    if (p.cho && set.cho) out.push({ role: 'cho', glyph: p.cho, box: set.cho, size: SIZE.cho });
-    if (p.jung && set.jung) out.push({ role: 'jung', glyph: p.jung, box: set.jung, size: SIZE.jung });
+    const push = (role, glyph, box) => {
+      const sz = slotSize(box);
+      out.push({ role, glyph, box, size: fit(glyph, role === 'jong2' ? 'jong' : role, sz[0], sz[1]) });
+    };
+    if (p.cho && set.cho) push('cho', p.cho, set.cho);
+    if (p.jung && set.jung) push('jung', p.jung, set.jung);
     if (p.jong && set.jong) {
       const pair = DOUBLE_JONG[p.jong];
       if (pair) {
         // 겹받침: two consonants sharing the final slot, side by side
         const b = set.jong;
-        out.push({ role: 'jong', glyph: pair[0], box: [b[0], b[1], b[2] * 0.5, b[3]], size: SIZE.jong });
-        out.push({ role: 'jong2', glyph: pair[1], box: [b[0] + b[2] * 0.5, b[1], b[2] * 0.5, b[3]], size: SIZE.jong });
+        push('jong', pair[0], [b[0], b[1], b[2] * 0.5, b[3]]);
+        push('jong2', pair[1], [b[0] + b[2] * 0.5, b[1], b[2] * 0.5, b[3]]);
       } else {
-        out.push({ role: 'jong', glyph: p.jong, box: set.jong, size: SIZE.jong });
+        push('jong', p.jong, set.jong);
       }
     }
     return out;
@@ -139,17 +243,15 @@
   const rowFontSize = (row) => parseFloat(getComputedStyle(row).fontSize) || 44;
 
   /* Curved arrows from where a letter was to where it goes, drawn over the row
-     and revealed with dash-offset so they "point" while the letter travels. */
-  function drawArrows(svg, root, from, to, row) {
-    const box = row.getBoundingClientRect();
+     and revealed with dash-offset so they point while the letter travels. */
+  function drawArrows(svg, root, pairs, rowBox, fs) {
     const host = root.getBoundingClientRect();
-    const fs = rowFontSize(row);
-    const w = box.width || 1, hgt = box.height || 1;
+    const w = rowBox.width || 1, hgt = rowBox.height || 1;
     svg.setAttribute('viewBox', '0 0 ' + w + ' ' + hgt);
     svg.setAttribute('width', w);
     svg.setAttribute('height', hgt);
-    svg.style.left = (box.left - host.left) + 'px';
-    svg.style.top = (box.top - host.top) + 'px';
+    svg.style.left = (rowBox.left - host.left) + 'px';
+    svg.style.top = (rowBox.top - host.top) + 'px';
     svg.innerHTML = '';
     const NS = 'http://www.w3.org/2000/svg';
     const defs = document.createElementNS(NS, 'defs');
@@ -157,29 +259,73 @@
       'markerWidth="5" markerHeight="5" orient="auto-start-reverse">' +
       '<path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/></marker>';
     svg.appendChild(defs);
-    from.forEach((f, i) => {
-      const g = to[i];
-      const x1 = f.x * fs, y1 = f.y * fs, x2 = g.x * fs, y2 = g.y * fs;
+    pairs.forEach((p, i) => {
+      const x1 = p.x1, y1 = p.y1, x2 = p.x2, y2 = p.y2;
       if (Math.hypot(x2 - x1, y2 - y1) < 8) return;
       const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
       const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy) || 1;
-      const bow = Math.min(26, len * 0.34);
+      const bow = Math.min(30, len * 0.34);
       const path = document.createElementNS(NS, 'path');
       path.setAttribute('d', 'M ' + x1 + ' ' + y1 + ' Q ' + (mx + (-dy / len) * bow) + ' ' +
         (my + (dx / len) * bow) + ' ' + x2 + ' ' + y2);
       path.setAttribute('class', 'marrow__path');
-      path.style.strokeDasharray = '400';
-      path.style.strokeDashoffset = '400';
+      path.style.strokeDasharray = '500';
+      path.style.strokeDashoffset = '500';
       svg.appendChild(path);
       setTimeout(() => {
-        path.style.transition = 'stroke-dashoffset 640ms var(--ease-out), opacity 320ms linear';
+        path.style.transition = 'stroke-dashoffset 700ms var(--ease-out), opacity 320ms linear';
         path.style.strokeDashoffset = '0';
       }, 140 + i * 120);
     });
   }
 
+  /* Where each letter of `text` sits, in row coordinates (em from the row's
+     top-left). Only used to launch and land the letters that actually travel. */
+  function positionsIn(text, offset) {
+    const out = [];
+    [...text].forEach((ch, i) => {
+      for (const L of lettersOf(ch)) {
+        out.push({ role: L.role, glyph: L.glyph, cell: i + offset, x: L.x, y: L.y, size: L.size });
+      }
+    });
+    return out;
+  }
+
+  /* Pair up the letters of the old and new middle sections. Whatever cannot be
+     paired either leaves or arrives — and only the ones that genuinely MOVE are
+     ever drawn as free letters. */
+  function planMoves(oldL, newL) {
+    const taken = new Set();
+    const moves = [];
+    for (const o of oldL) {
+      let idx = newL.findIndex((n, i) => !taken.has(i) &&
+        n.glyph === o.glyph && n.cell === o.cell && n.role === o.role);
+      if (idx < 0) idx = newL.findIndex((n, i) => !taken.has(i) && n.glyph === o.glyph && n.role === o.role);
+      if (idx < 0) idx = newL.findIndex((n, i) => !taken.has(i) && n.glyph === o.glyph);
+      if (idx >= 0) { taken.add(idx); moves.push([o, newL[idx]]); }
+    }
+    return moves;
+  }
+
+  const glyphed = (ch) => h('span', { class: 'msyl', 'data-ch': ch }, ch);
+  const rowOf = (text, targets) => {
+    const row = h('div', { class: 'mrow' });
+    [...text].forEach((ch, i) => {
+      const s = glyphed(ch);
+      if (targets && targets.indexOf(i) >= 0) s.classList.add('is-target');
+      row.appendChild(s);
+    });
+    return row;
+  };
+
   function morph(root, fromText, toText, opts) {
-    const t = Object.assign({ hold: 1000, mark: 420, move: 1050, close: 460, size: 0 }, opts || {});
+    const t = Object.assign({
+      hold: 780,      // the word sits still before anything happens
+      mark: 420,      // when the dashed boxes appear
+      travel: 1150,   // how long the moving letters take
+      settle: 520,    // cross-fade of the rest of the word
+      size: 0,
+    }, opts || {});
     const still = YK.anim && YK.anim.still && YK.anim.still();
     let timers = [];
     const clearT = () => { timers.forEach(clearTimeout); timers = []; };
@@ -196,132 +342,97 @@
       const { prefix, suffix } = align(from, to);
       const midFrom = from.slice(prefix, from.length - suffix);
       const midTo = to.slice(prefix, to.length - suffix);
+      const changed = [];
+      for (let i = 0; i < Math.max(midFrom.length, midTo.length); i++) changed.push(prefix + i);
 
-      const row = h('div', { class: 'mrow' });
-      from.slice(0, prefix).forEach((c) => row.appendChild(syl(c)));
-      const mid = h('span', { class: 'mmid' });
-      row.appendChild(mid);
-      to.slice(to.length - suffix).forEach((c) => row.appendChild(syl(c)));
-      root.appendChild(row);
-      if (t.size) row.style.fontSize = t.size + 'px';
+      /* The finished word sits on top of the old one and cross-fades. It stays
+         absolutely positioned until the very end, otherwise both rows fall back
+         into the flow and stack up instead of dissolving into each other. */
+      const stage = h('div', { class: 'mstage' });
+      const toRow = rowOf(toText, changed);
+      toRow.style.cssText = 'position:absolute;left:0;top:0;opacity:0;' +
+        'transition:opacity 520ms var(--ease-soft) 200ms';
+      const fromRow = rowOf(fromText, null);
+      fromRow.style.transition = 'opacity 520ms var(--ease-soft)';
+      stage.appendChild(toRow);
+      stage.appendChild(fromRow);
+      root.appendChild(stage);
+      if (t.size) stage.style.fontSize = t.size + 'px';
+
+      // work out what travels — driven by the real letters, not by whole syllables
+      const oldL = positionsIn(midFrom.join(''), prefix);
+      const newL = positionsIn(midTo.join(''), prefix);
+      const moves = planMoves(oldL, newL)
+        .filter(([o, n]) => Math.hypot((n.cell - o.cell) * W + (n.x - o.x), (n.y - o.y) * H) > 0.42);
 
       if (still) {                                   // reduced motion: just answer
-        midTo.forEach((c) => mid.appendChild(syl(c)));
+        fromRow.remove();
+        toRow.style.cssText = '';
         root.classList.add('is-done');
         return;
       }
 
-      const plain = midFrom.map((c) => {             // 1. the word as it is
-        const s = syl(c);
-        mid.appendChild(s);
-        return s;
-      });
-
-      timers.push(setTimeout(() => {                 // 2. box the part that changes
-        plain.forEach((s) => s.classList.add('is-target'));
+      timers.push(setTimeout(() => {                 // box the part that changes
+        fromRow.querySelectorAll('.is-target').forEach((e) => e.classList.add('is-marked'));
       }, t.mark));
 
-      timers.push(setTimeout(() => {                 // 3. open into letters
-        YK.clear(mid);
-        const opened = [];
-        midFrom.forEach((c, idx) => {
-          const { box, letters } = openSyl(c);
-          box.classList.add('is-target');
-          mid.appendChild(box);
-          letters.forEach((L) => opened.push(Object.assign({}, L, { cell: idx })));
+      timers.push(setTimeout(() => {                 // the letters set off
+        const host = root.getBoundingClientRect();
+        const rowBox = fromRow.getBoundingClientRect();
+        const fs = rowFontSize(fromRow);
+        const ox = rowBox.left - host.left, oy = rowBox.top - host.top;
+
+        const flyers = moves.map(([o, n]) => {
+          const el = h('span', {
+            class: 'mflyer', 'data-role': o.role,
+            style: {
+              left: (ox + (o.cell + o.x) * W * fs) + 'px',
+              top: (oy + o.y * H * fs) + 'px',
+              fontSize: (o.size * fs) + 'px',
+            },
+          }, o.glyph);
+          stage.appendChild(el);
+          return { el, o, n };
         });
 
-        timers.push(setTimeout(() => {               // 3 + 4. leave / travel / arrive
-          const oldL = [], newL = [];
-          midFrom.forEach((c, i) => lettersOf(c).forEach((L) => oldL.push(Object.assign({}, L, { cell: i }))));
-          midTo.forEach((c, i) => lettersOf(c).forEach((L) => newL.push(Object.assign({}, L, { cell: i }))));
-          const { moves, leaves, arrives } = match(oldL, newL);
-          const byKey = new Map();
-          opened.forEach((L) => byKey.set(L.cell + ':' + L.role, L.el));
+        fromRow.style.opacity = '0';                // the rest of the old word fades
+        toRow.style.opacity = '1';                  // …into the finished one
 
-          leaves.forEach((L) => {
-            const el = byKey.get(L.cell + ':' + L.role);
-            if (!el) return;
-            el.style.transform = CENTRE + ' translate(0, ' + (L.role === 'cho' ? -1.6 : 1.9) + 'em)';
-            el.style.opacity = '0';
-          });
-
-          /* The arrow is drawn over the whole ROW, so its coordinates have to
-             include the unchanged syllables that come before the mid section —
-             the letters themselves are positioned inside their own box. */
-          const base = prefix;
-          const arrowFrom = [], arrowTo = [];
-          moves.forEach(([o, n]) => {
-            const el = byKey.get(o.cell + ':' + o.role);
-            if (!el) return;
-            const dx = (n.cell - o.cell) * W + (n.x - o.x);
-            const dy = (n.y - o.y) * H;
-            el.style.transform = CENTRE + ' translate(' + dx + 'em, ' + dy + 'em)';
-            if (Math.hypot(dx, dy) > 0.45) {
-              arrowFrom.push({ x: (base + o.cell + o.x) * W, y: o.y * H });
-              arrowTo.push({ x: (base + n.cell + n.x) * W, y: n.y * H });
-            }
-          });
-
+        if (flyers.length) {
           const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
           svg.setAttribute('class', 'marrow');
           root.appendChild(svg);
-          drawArrows(svg, root, arrowFrom, arrowTo, row);
+          const arrows = flyers.map(({ o, n }) => ({
+            x1: (o.cell + o.x) * W * fs, y1: o.y * H * fs,
+            x2: (n.cell + n.x) * W * fs, y2: n.y * H * fs,
+          }));
+          drawArrows(svg, root, arrows, rowBox, fs);
+        }
 
-          arrives.forEach((n) => {
-            const host = mid.children[n.cell] || mid;
-            const el = h('span', {
-              class: 'mletter is-arriving', 'data-role': n.role,
-              style: { left: (n.x * W) + 'em', top: (n.y * H) + 'em',
-                       fontSize: n.size.toFixed(2) + 'em' },
-            }, n.glyph);
-            host.appendChild(el);
-            requestAnimationFrame(() => requestAnimationFrame(() => {
-              el.style.opacity = '1';
-              el.style.transform = CENTRE;
-            }));
-          });
-        }, 60));
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          for (const { el, o, n } of flyers) {
+            const dx = ((n.cell + n.x) - (o.cell + o.x)) * W * fs;
+            const dy = ((n.y - o.y) * H) * fs;
+            el.style.transform = 'translate(-50%, -50%) translate(' + dx + 'px, ' + dy + 'px)';
+          }
+          toRow.classList.remove('is-incoming');
+        }));
       }, t.hold));
 
-      timers.push(setTimeout(() => {                 // 5. close into the finished word
+      timers.push(setTimeout(() => {                 // tidy up
+        fromRow.remove();
+        toRow.style.cssText = '';                    // back into the flow
         const svg = root.querySelector('.marrow');
         if (svg) svg.classList.add('is-out');
-        const boxes = Array.from(mid.children);
-        if (boxes.length === midTo.length) {
-          // same syllable count: dissolve each box into its finished glyph
-          boxes.forEach((box, i) => {
-            const g = box.querySelector('.msyl__glyph');
-            if (g) {
-              g.textContent = midTo[i];
-              box.classList.remove('is-target');
-              box.classList.remove('msyl--open');
-              box.dataset.ch = midTo[i];
-            } else {
-              box.textContent = midTo[i];
-              box.dataset.ch = midTo[i];
-              box.classList.remove('is-target');
-            }
-          });
-          timers.push(setTimeout(() => {
-            boxes.forEach((box) => box.querySelectorAll('.mletter').forEach((l) => l.remove()));
-          }, t.close));
-        } else {
-          YK.clear(mid);
-          midTo.forEach((c) => {
-            const s = syl(c);
-            s.classList.add('is-in');
-            mid.appendChild(s);
-          });
-        }
         root.classList.add('is-done');
-      }, t.hold + t.move));
+      }, t.hold + t.travel));
 
       timers.push(setTimeout(() => {
         const svg = root.querySelector('.marrow');
         if (svg) svg.remove();
-        mid.querySelectorAll('.is-target').forEach((e) => e.classList.remove('is-target'));
-      }, t.hold + t.move + t.close));
+        root.querySelectorAll('.mflyer').forEach((e) => e.remove());
+        fromRow.querySelectorAll('.is-target').forEach((e) => e.classList.remove('is-target', 'is-marked'));
+      }, t.hold + t.travel + t.settle));
     }
 
     play();
@@ -357,5 +468,24 @@
       btn, stage);
   }
 
-  YK.hangulAnim = { cell, morph, widget, align, lettersOf };
+  /* Where the decomposition's ink actually lands, in cell em. Exposed so the
+     layout can be checked against the font's own composition (and so
+     tools/measure-ink.js has something to calibrate against). */
+  function inkBox(ch) {
+    const list = boxesFor(ch);
+    if (!list) return null;
+    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    for (const p of list) {
+      const role = p.role === 'jong2' ? 'jong' : p.role;
+      const ink = (INK[role] || INK.cho)[p.glyph] || [0.6, 0.5];
+      const iw = ink[0] * p.size, ih = ink[1] * p.size;
+      const c = centreOf(p.box);
+      const cx = c[0] * W, cy = c[1] * H;
+      x0 = Math.min(x0, cx - iw / 2); x1 = Math.max(x1, cx + iw / 2);
+      y0 = Math.min(y0, cy - ih / 2); y1 = Math.max(y1, cy + ih / 2);
+    }
+    return { l: x0, r: x1, t: y0, b: y1 };
+  }
+
+  YK.hangulAnim = { cell, morph, widget, align, lettersOf, inkBox, INK, BOX };
 })();

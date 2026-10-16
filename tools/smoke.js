@@ -307,6 +307,19 @@ go('#/vocab?mode=flash');
     YK.hangulAnim.lettersOf('안').map((l) => l.glyph).join('') === 'ㅇㅏㄴ');
   check('hangulAnim: letters carry their own drawn size',
     YK.hangulAnim.lettersOf('앉').every((l) => l.size > 0));
+  /* The decomposition must land on the same footprint as the font's own
+     composition. A real syllable inks about 0.83 x 0.89 em; the first attempt
+     rendered 25% too tall because the cell was 1.32em high. */
+  const boxes = ['안', '앉', '자', '국', '먹', '없'].map((c) => YK.hangulAnim.inkBox(c));
+  check('hangulAnim: decomposition stays inside its cell',
+    boxes.every((b) => b && b.l > -0.08 && b.r < 1.1 && b.t > -0.08 && b.b < 1.1),
+    JSON.stringify(boxes.map((b) => [b.l.toFixed(2), b.t.toFixed(2), b.b.toFixed(2)])));
+  const heights = boxes.map((b) => b.b - b.t);
+  check('hangulAnim: decomposition is not stretched vertically',
+    heights.every((h) => h > 0.75 && h < 1.15), heights.map((h) => h.toFixed(2)).join(', '));
+  const widths = boxes.map((b) => b.r - b.l);
+  check('hangulAnim: decomposition is not squeezed horizontally',
+    widths.every((w) => w > 0.68 && w < 1.05), widths.map((w) => w.toFixed(2)).join(', '));
   check('hangulAnim: aligns the unchanged part',
     JSON.stringify(YK.hangulAnim.align([...'한국어'], [...'한구거'])) ===
       JSON.stringify({ prefix: 1, suffix: 0 }));
