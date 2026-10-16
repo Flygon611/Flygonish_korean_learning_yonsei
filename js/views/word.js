@@ -82,10 +82,10 @@
         title: word,
         sub: (entry ? entry.zh : '词库里没有这个词，可能是活用形或专有名词。') +
           (entry && entry.lesson ? ' · 第 ' + entry.lesson + ' 课' : ''),
-        aside: [YK.tts.button(entry ? entry.ko : word)],
+        aside: [ui.backBtn('#/word'), YK.tts.button(entry ? entry.ko : word)],
       }),
 
-      h('div', { class: 'row', style: { gap: '8px', marginBottom: 'var(--s4)' } },
+      h('div', { class: 'row', style: { gap: '8px', marginBottom: 'var(--s4)', flexWrap: 'wrap' } },
         fav, known,
         h('a', { class: 'btn btn--sm',
           href: '#/lookup?q=' + encodeURIComponent(word) }, '拆整句'),

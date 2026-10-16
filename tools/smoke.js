@@ -328,6 +328,8 @@ go('#/vocab?mode=flash');
     wv.querySelectorAll('.conj__row').length);
   check('word page: finds real textbook sentences',
     wv.querySelectorAll('.word-row').length > 0);
+  check('word page: offers a way back',
+    [...window.document.querySelectorAll('#view button')].some((b) => b.textContent.indexOf('返回') >= 0));
   go('#/word?w=' + encodeURIComponent('학생'));
   check('word page: a noun has no conjugation section',
     window.document.querySelectorAll('#view .conj__row').length === 0);

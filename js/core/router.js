@@ -8,6 +8,9 @@
   const routes = new Map();
   let mount = null;
   let current = null;
+  /* Where the reader has been. Tapping a word in a dialogue leads to the word
+     page, and that page needs a way back to the sentence it came from. */
+  let trail = [];
 
   function parse(hash) {
     const raw = (hash || location.hash || '#/').replace(/^#/, '') || '/';
@@ -50,7 +53,12 @@
       node.classList.add('view-enter');
       mount.appendChild(node);
     }
-    current = { path, params, view };
+    const here = location.hash || '#/';
+    if (current && current.hash && current.hash !== here) {
+      trail.push(current.hash);
+      if (trail.length > 24) trail.shift();
+    }
+    current = { path, params, view, hash: here };
     YK.anim.runReady(mount);
 
     window.scrollTo({ top: 0, behavior: 'auto' });
@@ -59,11 +67,23 @@
     YK.store.setLastRoute(location.hash || '#/');
   }
 
+  /* Step back one page. `fallback` is used when there is nothing to go back to
+     — a word page opened straight from a link has no history behind it. */
+  function back(fallback) {
+    const here = location.hash || '#/';
+    while (trail.length) {
+      const to = trail.pop();
+      if (to && to !== here) { go(to); return true; }
+    }
+    if (fallback) { go(fallback); return false; }
+    return false;
+  }
+
   function start(target) {
     mount = target;
     window.addEventListener('hashchange', render);
     render();
   }
 
-  YK.router = { register, start, go, render, parse, current: () => current };
+  YK.router = { register, start, go, render, parse, back, current: () => current };
 })();

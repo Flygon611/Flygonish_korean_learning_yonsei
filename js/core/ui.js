@@ -193,6 +193,15 @@
     return wrap;
   }
 
+  /* A way back. Uses the router's own trail rather than history.back(), which
+     would walk out of the site when a deep link is opened in a fresh tab. */
+  function backBtn(fallback, label) {
+    return h('button', {
+      class: 'btn btn--sm', type: 'button',
+      onclick: () => YK.router.back(fallback),
+    }, label || '← 返回');
+  }
+
   function wordPop(entry, raw, extra) {
     return h('div', {},
       h('div', { class: 'pop__ko' }, entry ? entry.ko : raw),
@@ -215,7 +224,7 @@
   }
 
   YK.ui = {
-    pageHead, sectionTitle, ring, bar, popover, closeAll, toast,
+    pageHead, sectionTitle, ring, bar, popover, closeAll, toast, backBtn,
     art, artImg, speakBtn, chip, emptyState, options, koreanWords, wordPop, answerKey,
     castOf, castPhoto,
   };

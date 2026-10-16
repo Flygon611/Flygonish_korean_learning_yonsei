@@ -88,8 +88,9 @@
         sub: (entry ? entry.zh + ' · ' : '') + '词干 ' + conj.stem +
           (conj.irregular ? ' · ' + conj.irregular : ' · 规则变化'),
         aside: [
+          ui.backBtn('#/conj'),
           YK.tts.button(word),
-          h('a', { class: 'btn btn--sm', href: '#/conj' }, '← 词表'),
+          h('a', { class: 'btn btn--sm', href: '#/conj' }, '全部变形表'),
         ],
       }),
       conj.irregular
