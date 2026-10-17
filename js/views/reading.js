@@ -150,6 +150,7 @@
             h('div', { class: 'vcard__art' },
               pic ? h('img', { src: pic, alt: '', class: 'vcard__img', loading: 'lazy' }) : null),
             h('div', { class: 'vcard__ko' }, v.ko),
+            ui.pronLine(v.ko),
             h('div', { class: 'vcard__zh' }, v.zh),
             h('button', { class: 'vcard__star' + (known ? ' is-on' : ''), type: 'button',
               'aria-label': '标记认识', onclick: (e) => {

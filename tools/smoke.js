@@ -389,6 +389,25 @@ go('#/vocab?mode=flash');
     check('dict: sentence words resolve, not just vocabulary items', bad.length === 0, bad.join(','));
   }
 
+  /* Actual pronunciation and romanisation. These are the cases the textbook
+     teaches; the expected values were checked against the rules by hand. */
+  {
+    const say = (w) => (YK.pron ? YK.pron.say(w) : '');
+    const rom = (w) => (YK.pron ? YK.pron.roman(w) : '');
+    check('pron: module loaded', !!YK.pron);
+    const says = { '좋다': '조타', '먹는다': '멍는다', '국물': '궁물', '같이': '가치',
+      '한국어': '한구거', '없어요': '업써요', '앉아요': '안자요', '값': '갑',
+      '닭갈비': '닥깔비', '읽다': '익따' };
+    const badSay = Object.keys(says).filter((w) => say(w) !== says[w]);
+    check('pron: sound changes are applied', badSay.length === 0,
+      badSay.map((w) => w + '=' + say(w) + ' want ' + says[w]).join(','));
+    const roms = { '좋다': 'jota', '학교': 'hakgyo', '읽다': 'ikda', '없어요': 'eopseoyo',
+      '한국어': 'hangugeo', '우산': 'usan', '밥': 'bap' };
+    const badRom = Object.keys(roms).filter((w) => rom(w) !== roms[w]);
+    check('pron: romanisation follows pronunciation', badRom.length === 0,
+      badRom.map((w) => w + '=' + rom(w) + ' want ' + roms[w]).join(','));
+  }
+
   // 3. conjugation is reachable and complete
   const c = YK.conj.conjugate('먹다');
   check('conj: a verb produces all ten forms', c && c.forms.length === 10, c && c.forms.length);

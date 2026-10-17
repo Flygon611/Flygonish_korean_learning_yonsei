@@ -400,3 +400,12 @@
   font-size: 12px; line-height: 20px; cursor: pointer;
 }
 .vcard__star.is-on { color: var(--good); }
+
+/* Actual pronunciation + romanisation under a word. Small and grey: it is a
+   footnote to the word, not a second word competing with it. */
+.pron {
+  font-size: 11.5px; line-height: 1.4; color: var(--muted);
+  font-family: var(--font-sans); letter-spacing: .01em; margin-top: 1px;
+}
+.pop__ko + .pron { margin: -2px 0 6px; }
+.wordcard__big + .pron { font-size: 13px; text-align: center; margin-bottom: 4px; }

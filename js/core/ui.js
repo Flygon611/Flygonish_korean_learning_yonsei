@@ -202,9 +202,21 @@
     }, label || '← 返回');
   }
 
+  /* The small grey line under a word: the sound in brackets when it differs
+     from the spelling, then the romanisation. Never invented — if the module
+     is missing it renders nothing. */
+  function pronLine(word) {
+    if (!YK.pron || !word) return null;
+    var said = YK.pron.say(word), rom = YK.pron.roman(word);
+    if (!rom) return null;
+    return h('div', { class: 'pron' },
+      said && said !== word ? '[' + said + '] ' : '', rom);
+  }
+
   function wordPop(entry, raw, extra) {
     return h('div', {},
       h('div', { class: 'pop__ko' }, entry ? entry.ko : raw),
+      pronLine(entry ? entry.ko : raw),
       entry
         ? h('div', { class: 'pop__zh' }, entry.zh)
         : h('div', { class: 'pop__zh', style: { color: 'var(--warm)' } },
@@ -226,7 +238,7 @@
   YK.ui = {
     pageHead, sectionTitle, ring, bar, popover, closeAll, toast, backBtn,
     art, artImg, speakBtn, chip, emptyState, options, koreanWords, wordPop, answerKey,
-    castOf, castPhoto,
+    castOf, castPhoto, pronLine,
   };
   YK.closeAll = closeAll;
 })();

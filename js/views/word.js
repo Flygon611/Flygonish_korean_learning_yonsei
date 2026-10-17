@@ -139,6 +139,7 @@
         : theme ? h('div', { class: 'wordcard__art' },
             ui.artImg(theme, 0, 'wordcard__img')) : null,
       h('div', { class: 'wordcard__big' }, entry ? entry.ko : word),
+      ui.pronLine(entry ? entry.ko : word),
       h('div', { class: 'wordcard__zh' }, entry ? entry.zh : '词库里没有这个词'),
       entry && entry.lesson ? ui.chip('第 ' + entry.lesson + ' 课', 'chip--acc') : null,
       YK.tts.button(entry ? entry.ko : word));
