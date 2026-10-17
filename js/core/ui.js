@@ -213,12 +213,21 @@
       said && said !== word ? '[' + said + '] ' : '', rom);
   }
 
-  function wordPop(entry, raw, extra) {
+  function wordPop(entry, raw, extra, entries) {
+    /* A Korean spelling can carry several meanings (쓰다 = write, or bitter).
+       Showing only the first sense teaches the wrong thing half the time, so
+       every distinct sense is listed. */
+    const senses = (entries && entries.length ? entries : (entry ? [entry] : []))
+      .filter((e, i, arr) => arr.findIndex((x) => x.zh === e.zh) === i);
     return h('div', {},
       h('div', { class: 'pop__ko' }, entry ? entry.ko : raw),
       pronLine(entry ? entry.ko : raw),
       entry
-        ? h('div', { class: 'pop__zh' }, entry.zh)
+        ? h('div', { class: 'pop__zh' },
+            senses.length > 1
+              ? senses.map((e, i) => h('div', { class: 'pop__sense' },
+                  h('span', { class: 'pop__num' }, (i + 1) + '. '), e.zh))
+              : entry.zh)
         : h('div', { class: 'pop__zh', style: { color: 'var(--warm)' } },
             '词库里没有这个词，可能是活用形或专有名词。'),
       h('div', { class: 'pop__meta' },

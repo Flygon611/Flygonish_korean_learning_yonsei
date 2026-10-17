@@ -409,3 +409,7 @@
 }
 .pop__ko + .pron { margin: -2px 0 6px; }
 .wordcard__big + .pron { font-size: 13px; text-align: center; margin-bottom: 4px; }
+
+/* several meanings under one spelling */
+.pop__sense { display: flex; gap: 6px; line-height: 1.55; }
+.pop__num { color: var(--muted); font-size: 11px; min-width: 14px; }

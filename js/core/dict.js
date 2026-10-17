@@ -151,11 +151,17 @@
   function build() {
     if (index) return index;
     index = Object.create(null);
+    /* Same spelling, different meaning is normal in Korean: 눈 is both snow and
+       an eye, 배 is a pear, a boat and a belly. The first version kept only the
+       first definition, so every other sense was silently dropped. Now all of
+       them are kept and the lookup hands back the list. */
     const put = (ko, zh, lesson, src) => {
       const k = clean(ko);
-      if (!k || !zh) return;
-      if (index[k] && index[k].zh) return;              // first definition wins
-      index[k] = { ko: k, zh: clean(zh), lesson: lesson || 0, src: src || 'vocab' };
+      const z = clean(zh);
+      if (!k || !z) return;
+      const list = index[k] || (index[k] = []);
+      if (list.some((e) => e.zh === z)) return;
+      list.push({ ko: k, zh: z, lesson: lesson || 0, src: src || 'vocab' });
     };
     for (const lesson of (window.YK_LESSONS?.lessons || [])) {
       for (const sec of lesson.sections) {
@@ -299,17 +305,17 @@
 
   function findVerb(stem) {
     const idx = build();
-    if (IRREGULAR[stem] && idx[IRREGULAR[stem]]) return idx[IRREGULAR[stem]];
+    if (IRREGULAR[stem] && idx[IRREGULAR[stem]]) return idx[IRREGULAR[stem]][0];
     for (const base of stemVariants(stem)) {
-      if (IRREGULAR[base] && idx[IRREGULAR[base]]) return idx[IRREGULAR[base]];
+      if (IRREGULAR[base] && idx[IRREGULAR[base]]) return idx[IRREGULAR[base]][0];
       const cands = [base + '다', base + '하다'];
       if (/하$/.test(base)) cands.push(base.slice(0, -1) + '하다');
-      for (const c of cands) if (idx[c] && plausible(stem, idx[c].ko)) return idx[c];
+      for (const c of cands) if (idx[c] && plausible(stem, idx[c][0].ko)) return idx[c][0];
       /* The bare stem used to be accepted too, and that matched ANY entry:
          않습니다 reduced `않` to `아` and cheerfully returned the interjection
          아 "啊". findVerb promises a predicate, so a bare stem only counts when
          it really is one. */
-      if (idx[base] && /다$/.test(base)) return idx[base];
+      if (idx[base] && /다$/.test(base)) return idx[base][0];
     }
     return null;
   }
@@ -320,7 +326,7 @@
     const w = clean(raw).replace(/[.,?!。，？！"'()\[\]]+$/g, '');
     if (!w) return null;
     if (/^\d+$/.test(w)) return { entry: { ko: w, zh: '数字', lesson: 0, src: 'extra' }, via: 'number' };
-    if (idx[w]) return { entry: idx[w], via: 'exact' };
+    if (idx[w]) return { entry: idx[w][0], entries: idx[w], via: 'exact' };
 
     const forms = w === uncontracted(w) ? [w] : [w, uncontracted(w)];
     const plain = findVerb(w);
@@ -334,7 +340,7 @@
       for (const j of JOSA) {
         if (form.length > j.length && form.endsWith(j)) {
           const stem = form.slice(0, -j.length);
-          if (idx[stem]) return { entry: idx[stem], via: 'stem', suffix: j };
+          if (idx[stem]) return { entry: idx[stem][0], entries: idx[stem], via: 'stem', suffix: j };
           const v = findVerb(stem);
           if (v) return { entry: v, via: 'stem', suffix: j };
         }
@@ -351,13 +357,20 @@
             if (sp && sp.jong === 'ㅂ') {
               const restored = stem.slice(0, -1) + join(sp.cho, sp.jung, 'ㄹ');
               const rv = findVerb(restored);
-              if (rv) return { entry: rv, via: 'ending', suffix: e };
+              if (rv) {
+                /* 삽니다 is both 살다 (to live) and 사다 (to buy): same shape,
+                   two verbs. Listing both beats silently picking one. */
+                const alt = findVerb(stem);
+                const list = [rv];
+                if (alt && alt.ko !== rv.ko) list.push(alt);
+                return { entry: rv, entries: list, via: 'ending', suffix: e };
+              }
             }
           }
           /* a verbal ending means the stem is a verb: 전화해 -> 전화하다, not 전화 */
           const v = findVerb(stem);
           if (v) return { entry: v, via: 'ending', suffix: e };
-          if (idx[stem]) return { entry: idx[stem], via: 'ending', suffix: e };
+          if (idx[stem]) return { entry: idx[stem][0], entries: idx[stem], via: 'ending', suffix: e };
         }
       }
     }
@@ -382,7 +395,7 @@
     return out;
   }
 
-  const all = () => Object.values(build());
+  const all = () => [].concat.apply([], Object.values(build()));
   const size = () => Object.keys(build()).length;
 
   YK.dict = { lookup, analyze, all, size, build,

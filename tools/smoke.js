@@ -422,6 +422,17 @@ go('#/vocab?mode=flash');
       look('압니다') !== '하다', look('압니다'));
   }
 
+  /* One spelling, several meanings. The dictionary used to keep only the first
+     definition, so 쓰다 taught "write" and silently dropped "bitter". */
+  {
+    const senses = (w) => { const h = YK.dict.lookup(w); return h && h.entries ? h.entries.map((e) => e.zh) : []; };
+    check('dict: a homograph keeps every sense', senses('쓰다').length >= 2, senses('쓰다').join(' / '));
+    check('dict: 안 is both "inside" and the negative adverb',
+      senses('안').length >= 2, senses('안').join(' / '));
+    check('dict: an ambiguous inflection lists both verbs',
+      senses('삽니다').length === 2, senses('삽니다').join(' / '));
+  }
+
   // 3. conjugation is reachable and complete
   const c = YK.conj.conjugate('먹다');
   check('conj: a verb produces all ten forms', c && c.forms.length === 10, c && c.forms.length);

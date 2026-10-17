@@ -29,7 +29,7 @@
           const entry = hit && hit.entry;
           ui.popover(anchor, ui.wordPop(entry, raw, h('a', {
             class: 'btn btn--sm', href: '#/lookup?q=' + encodeURIComponent(e.ko),
-          }, '拆整句')));
+          }, '拆整句'), hit && hit.entries));
         })),
         e.zh ? h('div', { class: 'gex__zh' }, e.zh) : null),
       YK.tts.button(e.ko));

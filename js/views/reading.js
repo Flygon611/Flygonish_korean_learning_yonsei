@@ -97,9 +97,9 @@
         h('div', { class: 'gex__ko' }, ui.koreanWords(e.ko, (raw, anchor) => {
           const hit = YK.dict.lookup(raw);
           const entry = hit && hit.entry;
-          ui.popover(anchor, ui.wordPop(entry, raw, h('a', {
+          ui.popover(anchor, ui.wordPop(entry, raw, null, hit && hit.entries, h('a', {
             class: 'btn btn--sm', href: '#/lookup?q=' + encodeURIComponent(e.ko),
-          }, '拆整句')));
+          }, '拆整句'), hit && hit.entries));
         })),
         e.zh ? h('div', { class: 'gex__zh' }, e.zh) : null),
       ui.speakBtn(e.ko));
@@ -164,7 +164,7 @@
             e.stopPropagation();
             const hit = YK.dict.lookup(v.ko);
             ui.popover(card, ui.wordPop(hit ? hit.entry : { ko: v.ko, zh: v.zh, lesson: lesson.no },
-              v.ko));
+              v.ko, null, hit && hit.entries));
           });
           return card;
         }))));
