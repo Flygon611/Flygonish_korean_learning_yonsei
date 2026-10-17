@@ -298,6 +298,103 @@ def schema_pictos():
     return items
 
 
+
+# ---------------------------------------------------------------- time
+# 전/후 were the weak spot of the first attempt: two pictures that looked almost
+# the same. The fix is to give the two parts different SHAPES — a vertical bar
+# always means "the reference point", a dot always means "the event" — so
+# before/after is read from which side the dot is on.
+
+def _axis(arrow=True):
+    left = '<path d="M8 34 H56" stroke="%s" stroke-width="1.5" stroke-linecap="round"/>' % INK
+    if arrow:
+        left += '<path d="M56 34 l-4.5 -2.6 v5.2 z" fill="%s"/>' % INK
+    return left
+
+
+def _ref_bar(x, y1=20, y2=48):
+    return ('<path d="M%d %d V%d" stroke="%s" stroke-width="2.4" stroke-linecap="round"/>'
+            % (x, y1, y2, INK)
+            + '<circle cx="%d" cy="%d" r="2.4" fill="%s"/>' % (x, y2, INK))
+
+
+def _event(x, r=5.2, colour=None):
+    return '<circle cx="%d" cy="34" r="%.1f" fill="%s"/>' % (x, r, colour or ACCENT)
+
+
+def _before_after(after):
+    """dot left of the bar = before; dot right of the bar = after"""
+    if after:
+        out = _axis() + _ref_bar(24) + _event(46)
+    else:
+        out = _axis() + _ref_bar(42) + _event(20)
+    return card(out)
+
+
+def _during():
+    """동안: a span, drawn as a band between two bars."""
+    band = ('<rect x="18" y="28" width="28" height="12" rx="3" fill="%s" opacity=".35"/>' % ACCENT)
+    return card(_axis(False) + band + _ref_bar(18) + _ref_bar(46)
+                + '<path d="M22 34 H42" stroke="%s" stroke-width="1.6"/>' % INK
+                + '<path d="M43 34 l-4 -2.4 v4.8 z" fill="%s"/>' % INK
+                + '<path d="M21 34 l4 -2.4 v4.8 z" fill="%s"/>' % INK)
+
+
+def _when():
+    """때: one moment on the line, marked."""
+    star = ('<path d="M32 16 l2.6 5.4 5.9 .8 -4.3 4.1 1.1 5.9 -5.3 -2.9 '
+            '-5.3 2.9 1.1 -5.9 -4.3 -4.1 5.9 -.8 z" fill="%s"/>' % ACCENT)
+    return card(_axis(False) + _ref_bar(32, 24, 48) + star)
+
+
+def _month(pos):
+    """지난/이번/다음 달: three calendar tiles, one lit."""
+    out = ''
+    for i in range(3):
+        x = 8 + i * 17
+        lit = i == pos
+        out += ('<rect x="%d" y="18" width="14" height="16" rx="2.5" fill="%s" '
+                'stroke="%s" stroke-width="1.2"/>'
+                % (x, ACCENT if lit else SOFT, INK if lit else '#9aa7c7'))
+        if lit:
+            out += '<path d="M%d 21 H%d" stroke="#fff" stroke-width="1.6"/>' % (x + 2, x + 12)
+        else:
+            out += ('<path d="M%d 21 H%d" stroke="#9aa7c7" stroke-width="1.2"/>'
+                    % (x + 2, x + 12))
+    out += '<path d="M8 42 H54" stroke="%s" stroke-width="1.4"/>' % INK
+    return card(out)
+
+
+def _most():
+    """제일 / 가장: three bars, the tallest marked as the one on top."""
+    out = ''
+    for i in range(3):
+        h = 8 + i * 7
+        x = 14 + i * 12
+        out += ('<rect x="%d" y="%d" width="8" height="%d" rx="2" fill="%s"/>'
+                % (x, 44 - h, h, ACCENT if i == 2 else '#c3cfe0'))
+    out += ('<path d="M49 12 l2 4 4.4 .6 -3.2 3.1 .8 4.4 -4 -2.1 -4 2.1 '
+            '.8 -4.4 -3.2 -3.1 4.4 -.6 z" fill="%s"/>' % RED)
+    out += '<path d="M10 44 H56" stroke="%s" stroke-width="1.4"/>' % INK
+    return card(out)
+
+
+def time_pictos():
+    return [
+        ('전', 'time-before', _before_after(False)),
+        ('전에', 'time-before', _before_after(False)),
+        ('후', 'time-after', _before_after(True)),
+        ('후에', 'time-after', _before_after(True)),
+        ('동안', 'time-during', _during()),
+        ('때', 'time-when', _when()),
+        ('지난달', 'time-last-month', _month(0)),
+        ('이번 달', 'time-this-month', _month(1)),
+        ('다음 달', 'time-next-month', _month(2)),
+        ('제일', 'time-most', _most()),
+        ('가장', 'time-most', _most()),
+    ]
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     made = []
@@ -333,6 +430,7 @@ def main():
             made.append((ko, 'fam-' + ko, composite(src, sym, col)))
 
     made.extend(schema_pictos())
+    made.extend(time_pictos())
 
     for ko, name, svg in made:
         open(os.path.join(OUT, name + '.svg'), 'w', encoding='utf-8').write(svg)
