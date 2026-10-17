@@ -281,6 +281,22 @@
     return Array.from(new Set(out));
   }
 
+  /* A candidate only counts if it could actually BE the verb behind this stem.
+     Without this, findVerb('압') walked down to the bare stem '하' and matched
+     하다, so 압니다 in "나는 저 사람을 압니다" was glossed as "to do". */
+  function plausible(stem, ko) {
+    const base = ko.replace(/다$/, '');
+    if (!stem || !base) return false;
+    if (stem[0] === base[0]) return true;
+    if (stem.length === 1 && base.length === 1) {
+      const a = split(stem), b = split(base);
+      /* the past tense also merges ㅐ into ㅏ: 했습니다 -> 하다 */
+      const sameVowel = a && b && (a.jung === b.jung || (a.jung === 'ㅐ' && b.jung === 'ㅏ'));
+      return !!(a && b && a.cho === b.cho && sameVowel);
+    }
+    return false;
+  }
+
   function findVerb(stem) {
     const idx = build();
     if (IRREGULAR[stem] && idx[IRREGULAR[stem]]) return idx[IRREGULAR[stem]];
@@ -288,7 +304,7 @@
       if (IRREGULAR[base] && idx[IRREGULAR[base]]) return idx[IRREGULAR[base]];
       const cands = [base + '다', base + '하다'];
       if (/하$/.test(base)) cands.push(base.slice(0, -1) + '하다');
-      for (const c of cands) if (idx[c]) return idx[c];
+      for (const c of cands) if (idx[c] && plausible(stem, idx[c].ko)) return idx[c];
       /* The bare stem used to be accepted too, and that matched ANY entry:
          않습니다 reduced `않` to `아` and cheerfully returned the interjection
          아 "啊". findVerb promises a predicate, so a bare stem only counts when
@@ -326,6 +342,18 @@
       for (const e of ENDINGS) {
         if (form.length > e.length && form.endsWith(e)) {
           const stem = form.slice(0, -e.length);
+          /* 알 + ㅂ니다 -> 압니다, 만들 + ㅂ니다 -> 만듭니다: an ㄹ-final verb
+             drops its ㄹ and the ㅂ lands on the stem syllable. Undo that
+             first, otherwise 압니다 only ever looks like 압 + 니다. */
+          if ((e === '니다' || e === '니까') && stem.length) {
+            const lastCh = stem[stem.length - 1];
+            const sp = isHangul(lastCh) ? split(lastCh) : null;
+            if (sp && sp.jong === 'ㅂ') {
+              const restored = stem.slice(0, -1) + join(sp.cho, sp.jung, 'ㄹ');
+              const rv = findVerb(restored);
+              if (rv) return { entry: rv, via: 'ending', suffix: e };
+            }
+          }
           /* a verbal ending means the stem is a verb: 전화해 -> 전화하다, not 전화 */
           const v = findVerb(stem);
           if (v) return { entry: v, via: 'ending', suffix: e };

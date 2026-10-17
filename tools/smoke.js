@@ -408,6 +408,20 @@ go('#/vocab?mode=flash');
       badRom.map((w) => w + '=' + rom(w) + ' want ' + roms[w]).join(','));
   }
 
+  /* 압니다 is 알다 + ㅂ니다: an ㄹ-final verb drops its ㄹ. It used to resolve
+     to 하다 because findVerb('압') walked down to the bare stem '하'. */
+  {
+    const look = (w) => { const h = YK.dict.lookup(w); return h && h.entry ? h.entry.ko : null; };
+    const want = { '압니다': '알다', '압니까': '알다', '팝니다': '팔다', '삽니다': '살다',
+      '합니다': '하다', '갑니다': '가다', '봅니다': '보다', '줍니다': '주다',
+      '공부합니다': '공부하다', '했습니다': '하다', '먹습니다': '먹다', '좋습니다': '좋다' };
+    const bad = Object.keys(want).filter((w) => look(w) !== want[w]);
+    check('dict: ㄹ-final ㅂ니다 forms resolve to the right verb', bad.length === 0,
+      bad.map((w) => w + '->' + look(w)).join(','));
+    check('dict: ㅂ니다 never resolves to an unrelated verb',
+      look('압니다') !== '하다', look('압니다'));
+  }
+
   // 3. conjugation is reachable and complete
   const c = YK.conj.conjugate('먹다');
   check('conj: a verb produces all ten forms', c && c.forms.length === 10, c && c.forms.length);
