@@ -362,9 +362,14 @@ go('#/vocab?mode=flash');
                                        p.indexOf('assets/picto/') === 0));
     // numerals DO get a generated picture now (한자 for Sino, digit + 태극 for
     // native); counters, particles and abstract adverbs still must not
-    const bad = ['명', '마리', '권', '장', '하고', '에게', '의', '자주', '가끔', '별로', '아직'];
+    const bad = ['명', '마리', '권', '장', '하고', '에게', '의'];
     const wrong = bad.filter((w) => picto[w]);
-    check('picto: counters, particles and adverbs have no picture', wrong.length === 0, wrong.join(','));
+    check('picto: counters and particles have no picture', wrong.length === 0, wrong.join(','));
+    /* frequency and degree adverbs get a schematic drawing — a scale of marks
+       says 더 자주 / 더 가끔 in a way a picture of an object never could */
+    const sch = ['항상', '자주', '가끔', '별로', '전혀', '주로', '조금', '많이'];
+    const noSch = sch.filter((w) => !/assets\/picto\/sch-/.test(picto[w] || ''));
+    check('picto: frequency and degree use the schematic set', noSch.length === 0, noSch.join(','));
     check('picto: numerals are drawn by the generator',
       /assets\/picto\/num-sino/.test(picto['일'] || '') && /assets\/picto\/num-native/.test(picto['하나'] || ''),
       (picto['일'] || '-') + ' / ' + (picto['하나'] || '-'));

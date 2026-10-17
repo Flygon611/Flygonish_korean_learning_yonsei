@@ -181,6 +181,123 @@ def composite(src, symbol, colour):
     return card('<g transform="scale(0.84) translate(1.5 1)">%s</g>' % body + badge)
 
 
+
+# ---------------------------------------------------------------- schematic
+# Concepts a picture of an object cannot express: how often, how much, in what
+# order, with whom. One grammar throughout — marks on a track — so 자주 vs 가끔
+# reads as a scale instead of three unrelated drawings.
+
+def _marks(filled, total=5, colour=ACCENT, faded=False):
+    w, gap, y = 7.2, 3.4, 26
+    span = total * w + (total - 1) * gap
+    x0 = (64 - span) / 2
+    out = ''
+    for i in range(total):
+        lit = i < filled
+        c = colour if lit else '#c3cfe0'
+        op = '' if lit else ' opacity=".30"'
+        out += ('<rect x="%.1f" y="%d" width="%.1f" height="11" rx="3.4" fill="%s"%s/>'
+                % (x0 + i * (w + gap), y, w, c, op))
+    return out
+
+
+def _track(y=43):
+    return '<path d="M9 %d H55" stroke="%s" stroke-width="1.5" stroke-linecap="round"/>' % (y, INK)
+
+
+def _bar(pct, colour=ACCENT, warn=False):
+    inner = 44 * max(0.0, min(1.0, pct))
+    body = ('<rect x="10" y="24" width="44" height="16" rx="8" fill="%s" stroke="%s" '
+            'stroke-width="1.4"/>' % (SOFT, INK))
+    fill = ('<rect x="10" y="24" width="%.1f" height="16" rx="8" fill="%s"/>' % (inner, colour)
+            if inner > 0 else '')
+    mark = ('<path d="M47 15 v6" stroke="%s" stroke-width="2.4" stroke-linecap="round"/>'
+            % RED if warn else '')
+    return card(body + fill + mark)
+
+
+def _dot_track(pos):
+    xs = [16, 32, 48]
+    out = '<path d="M10 32 H54" stroke="%s" stroke-width="1.5"/>' % INK
+    for i, x in enumerate(xs):
+        out += ('<circle cx="%d" cy="32" r="%s" fill="%s"%s/>'
+                % (x, 6 if i == pos else 3, ACCENT if i == pos else '#c3cfe0',
+                   '' if i == pos else ' opacity=".45"'))
+    return card(out)
+
+
+def _company(two):
+    def person(x):
+        return ('<circle cx="%d" cy="24" r="5.2" fill="%s"/>' % (x, ACCENT)
+                + '<path d="M%d 31 v10" stroke="%s" stroke-width="2.4" stroke-linecap="round"/>'
+                  % (x, ACCENT)
+                + '<path d="M%d 35 l-5 5 M%d 35 l5 5" stroke="%s" stroke-width="2" '
+                  'stroke-linecap="round"/>' % (x, x, ACCENT))
+    return card(person(24) + person(42) if two else person(32))
+
+
+def _clock(angle, dashed, bang=False):
+    import math
+    cx, cy, r = 32, 30, 14
+    out = '<circle cx="%d" cy="%d" r="%d" fill="none" stroke="%s" stroke-width="1.6"/>' % (
+        cx, cy, r, INK)
+    ax = cx + 8 * math.cos(math.radians(angle - 90))
+    ay = cy + 8 * math.sin(math.radians(angle - 90))
+    out += '<path d="M%d %d L%.1f %.1f" stroke="%s" stroke-width="1.8" stroke-linecap="round"/>' % (
+        cx, cy, ax, ay, ACCENT)
+    if dashed:
+        out += ('<path d="M%d %d a%d %d 0 0 1 %d 0" fill="none" stroke="#c3cfe0" '
+                'stroke-width="2" stroke-dasharray="3 3"/>' % (cx - r, cy, r, r, 2 * r))
+    out += '<path d="M10 52 H54" stroke="%s" stroke-width="1.5"/>' % INK
+    if bang:
+        out += ('<text x="51" y="18" font-size="13" font-weight="700" fill="%s" '
+                'font-family="-apple-system,sans-serif">!</text>' % RED)
+    return card(out)
+
+
+def _order(pos, total=3):
+    out = ''
+    for i in range(total):
+        y = 20 + i * 12
+        lit = i == pos
+        out += ('<rect x="14" y="%d" width="%d" height="8" rx="2.5" fill="%s"%s/>'
+                % (y, 36 - i * 6, ACCENT if lit else '#c3cfe0', '' if lit else ' opacity=".35"'))
+        out += '<circle cx="8" cy="%d" r="2.6" fill="%s"/>' % (y + 4, ACCENT if lit else '#c3cfe0')
+    return card(out)
+
+
+def schema_pictos():
+    """Returns [(korean word, file stem, svg)]."""
+    good = '#2f9e44'
+    items = [
+        ('항상', 'sch-always', card(_marks(5) + _track())),
+        ('자주', 'sch-often', card(_marks(3) + _track())),
+        ('가끔', 'sch-sometimes', card(_marks(1) + _track())),
+        ('별로', 'sch-notmuch', card(_marks(1, 5, '#c3cfe0') + _track())),
+        ('전혀', 'sch-never', card(_marks(0) + _track())),
+        ('주로', 'sch-mainly', card(_marks(4) + _track())),
+        ('아주', 'sch-very', _bar(0.9)),
+        ('조금', 'sch-a-little', _bar(0.25)),
+        ('많이', 'sch-much', _bar(0.7)),
+        ('너무', 'sch-too-much', _bar(1.0, RED, warn=True)),
+        ('모두', 'sch-all', card(_marks(5, 5, good) + _track())),
+        ('몇', 'sch-how-many', card(_marks(0) + _track()
+            + '<text x="32" y="21" font-size="15" font-weight="700" fill="%s" '
+              'text-anchor="middle" font-family="-apple-system,sans-serif">?</text>' % INK)),
+        ('한번', 'sch-once', card(_marks(1) + _track())),
+        ('두번', 'sch-twice', card(_marks(2) + _track())),
+        ('같이', 'sch-together', _company(True)),
+        ('혼자', 'sch-alone', _company(False)),
+        ('먼저', 'sch-first', _order(0)),
+        ('나중에', 'sch-later', _order(2)),
+        ('지난', 'sch-last', _dot_track(0)),
+        ('이번', 'sch-this', _dot_track(1)),
+        ('아직', 'sch-yet', _clock(300, True)),
+        ('벌써', 'sch-already', _clock(60, False, bang=True)),
+    ]
+    return items
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     made = []
@@ -214,6 +331,8 @@ def main():
         src = os.path.join(om, hexc + '.svg')
         if os.path.exists(src):
             made.append((ko, 'fam-' + ko, composite(src, sym, col)))
+
+    made.extend(schema_pictos())
 
     for ko, name, svg in made:
         open(os.path.join(OUT, name + '.svg'), 'w', encoding='utf-8').write(svg)
