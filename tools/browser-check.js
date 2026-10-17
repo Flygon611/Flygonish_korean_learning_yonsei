@@ -103,6 +103,18 @@ const EDGE = '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge';
   ok('课文页语法例句被切成可点的词', rg.words > 0, JSON.stringify(rg));
   ok('语法例句里的词真的能点到', !!rg.hit, JSON.stringify(rg));
 
+  console.log('课文页词汇');
+  await go('#/reading?l=1&s=3');
+  const vg = await page.evaluate(() => {
+    const cards = [...document.querySelectorAll('#view .vcard')];
+    const imgs = [...document.querySelectorAll('#view .vcard__img')];
+    return { cards: cards.length, imgs: imgs.length,
+             broken: imgs.filter((i) => !(i.complete && i.naturalWidth > 0)).length,
+             first: cards[0] ? cards[0].textContent.replace(/\s+/g, ' ').trim().slice(0, 20) : null };
+  });
+  ok('本节词汇是图+词卡片', vg.cards > 5 && vg.imgs > 3, JSON.stringify(vg));
+  ok('词汇卡片的图全部加载成功', vg.broken === 0, String(vg.broken));
+
   console.log('词条页');
   await go('#/word?w=' + encodeURIComponent('배우다'));
   const wd = await page.evaluate(() => ({

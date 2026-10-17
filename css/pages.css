@@ -374,3 +374,29 @@
    light panel instead of being cropped to fill the box like a photo. */
 .wordcard__art--picto { background: var(--surface-2); }
 .wordcard__picto { width: 78%; height: 78%; object-fit: contain; }
+
+/* Vocabulary on the reading page: picture + word, matching the word page.
+   Without the picture this is a list you can only read, not learn from. */
+.vgrid-card { padding: 12px; }
+.vgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+.vcard {
+  position: relative; display: flex; flex-direction: column; align-items: center;
+  gap: 3px; padding: 10px 8px 8px; border: 1px solid var(--line);
+  border-radius: 14px; background: var(--surface);
+  cursor: pointer; text-align: center;
+  transition: transform .18s var(--ease-out), border-color .18s var(--ease-out),
+              box-shadow .18s var(--ease-out);
+}
+.vcard:hover { transform: translateY(-2px); border-color: var(--line-2); box-shadow: var(--shadow-1); }
+.vcard:active { transform: translateY(0) scale(.98); }
+.vcard.is-known { border-color: color-mix(in srgb, var(--good) 45%, var(--line)); }
+.vcard__art { width: 54px; height: 54px; display: grid; place-items: center; }
+.vcard__img { width: 100%; height: 100%; object-fit: contain; }
+.vcard__ko { font-family: var(--font-kr-serif); font-size: 17px; line-height: 1.25; }
+.vcard__zh { font-size: 11.5px; color: var(--muted); line-height: 1.3; }
+.vcard__star {
+  position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; padding: 0;
+  border: none; border-radius: 50%; background: transparent; color: var(--muted);
+  font-size: 12px; line-height: 20px; cursor: pointer;
+}
+.vcard__star.is-on { color: var(--good); }

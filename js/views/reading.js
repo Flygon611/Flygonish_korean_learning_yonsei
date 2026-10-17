@@ -139,30 +139,34 @@
 
     if (sec.vocab.length) {
       tail.push(ui.sectionTitle('本节的词 · ' + sec.vocab.length + ' 个'));
-      tail.push(h('div', { class: 'card', style: { padding: '8px 6px' } },
-        sec.vocab.map((v) => {
+      /* Picture + word, the same shape as the word page. A bare list made the
+         vocabulary the least learnable part of a page that is supposed to be
+         about learning it. */
+      tail.push(h('div', { class: 'card vgrid-card' },
+        h('div', { class: 'vgrid' }, sec.vocab.map((v) => {
           const known = YK.store.isKnown(v.ko);
-          const row = h('div', { class: 'word-row' },
-            h('span', { style: { width: '8px', height: '8px', borderRadius: '50%',
-              background: known ? 'var(--good)' : 'var(--line-2)', flex: 'none' } }),
-            h('span', {},
-              h('div', { class: 'word-row__ko' }, v.ko),
-              h('div', { class: 'word-row__zh' }, v.zh)),
-            h('button', { class: 'word-row__star' + (known ? ' is-on' : ''), type: 'button',
+          const pic = (window.YK_PICTO || {})[v.ko];
+          const card = h('div', { class: 'vcard' + (known ? ' is-known' : '') },
+            h('div', { class: 'vcard__art' },
+              pic ? h('img', { src: pic, alt: '', class: 'vcard__img', loading: 'lazy' }) : null),
+            h('div', { class: 'vcard__ko' }, v.ko),
+            h('div', { class: 'vcard__zh' }, v.zh),
+            h('button', { class: 'vcard__star' + (known ? ' is-on' : ''), type: 'button',
               'aria-label': '标记认识', onclick: (e) => {
                 e.stopPropagation();
                 const on = YK.store.toggleKnown(v.ko);
                 e.currentTarget.classList.toggle('is-on', on);
                 e.currentTarget.textContent = on ? '✓' : '○';
+                card.classList.toggle('is-known', on);
               } }, known ? '✓' : '○'));
-          row.addEventListener('click', (e) => {
+          card.addEventListener('click', (e) => {
             e.stopPropagation();
             const hit = YK.dict.lookup(v.ko);
-            ui.popover(row, ui.wordPop(hit ? hit.entry : { ko: v.ko, zh: v.zh, lesson: lesson.no },
+            ui.popover(card, ui.wordPop(hit ? hit.entry : { ko: v.ko, zh: v.zh, lesson: lesson.no },
               v.ko));
           });
-          return row;
-        })));
+          return card;
+        }))));
     }
 
     if (sec.grammar.length) {
