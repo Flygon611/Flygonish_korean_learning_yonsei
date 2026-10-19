@@ -526,12 +526,12 @@
    no icon, just the word sitting where it points. A soft halo keeps it legible
    over the drawing without putting a box back around it. */
 .cl__pt--bare {
-  /* Not a card — but 안 sits on a pale blue face, so the label needs a faint
-     wash behind it or it disappears. No border, no shadow, no icon. */
-  background: var(--bg);
-  border: none; box-shadow: none; padding: 2px 8px; border-radius: 8px;
-  backdrop-filter: blur(3px);
-  text-shadow: none;
+  /* No card, no wash, no blur — just a shadow so the word separates from the
+     drawing. Anything heavier reads as a box the reader did not ask for. */
+  background: none;
+  border: none; box-shadow: none; padding: 2px 4px;
+  backdrop-filter: none;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .55), 0 0 10px rgba(0, 0, 0, .35);
 }
 .cl__pt--bare:hover { transform: translate(-50%, -50%) scale(1.12); border: none; }
 /* The drawing is a reference, not the content — the words have to win. */
@@ -576,5 +576,9 @@
 
 /* 뒤 is drawn under the picture; the cube's silhouette cutting through it is
    the cue that says "behind". */
-.cl__scene .cl__pt { z-index: 2; }
-.cl__scene-bg + .cl__pt, .cl__scene .cl__pt--behind { z-index: 1; }
+/* The picture has to be a positioned box with a z-index of its own: an
+   absolutely positioned chip otherwise paints over a static <img> and nothing
+   is ever occluded. */
+.cl__scene-bg { position: relative; z-index: 2; }
+.cl__scene .cl__pt { z-index: 3; }
+.cl__scene .cl__pt--behind { z-index: 1; }

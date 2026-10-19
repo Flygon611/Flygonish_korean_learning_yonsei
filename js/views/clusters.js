@@ -78,7 +78,7 @@
         var bare = c.bare;
         var chip = h('div', {
           class: 'cl__pt' + (c.compact ? ' cl__pt--compact' : '') + (bare ? ' cl__pt--bare' : '')
-            + (it.tf ? ' cl__pt--onface' : ''),
+            + (it.tf ? ' cl__pt--onface' : '') + (it.behind ? ' cl__pt--behind' : ''),
         },
           bare ? null : art(it.ko),
           it.dashed
