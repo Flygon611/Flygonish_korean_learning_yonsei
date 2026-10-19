@@ -456,6 +456,27 @@ go('#/vocab?mode=flash');
       N && N.beforeCounter[0] ? N.beforeCounter[0].join(' ') : '-');
   }
 
+  /* A meaning cell that spanned into the next row used to glue two words
+     together — 아버지 came out as "爸爸 어머니 妈妈" and 어머니 was lost. No
+     glossary should contain Hangul. */
+  {
+    let hungul = 0, total = 0;
+    for (const L of window.YK_LESSONS.lessons)
+      for (const sec of L.sections)
+        for (const v of (sec.vocab || [])) {
+          total++;
+          if (/[\uac00-\ud7af]/.test(v.zh || '')) hungul++;
+        }
+    check('vocab: no glossary absorbed the next word', hungul === 0, hungul + ' of ' + total);
+    check('vocab: lesson 3-2 lists every family word',
+      (() => {
+        const L = window.YK_LESSONS.lessons.find((x) => x.no === 3);
+        const sec = L && L.sections.find((x) => x.section === 2);
+        const ko = sec ? sec.vocab.map((v) => v.ko) : [];
+        return ['어머니', '할머니', '외할머니', '형', '모두', '부모님'].every((w) => ko.indexOf(w) >= 0);
+      })());
+  }
+
   // 3. conjugation is reachable and complete
   const c = YK.conj.conjugate('먹다');
   check('conj: a verb produces all ten forms', c && c.forms.length === 10, c && c.forms.length);
