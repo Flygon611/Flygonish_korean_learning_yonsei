@@ -64,9 +64,12 @@ def cube():
 
     # No leader lines: the words sit where they point, which is what the
     # reader asked for. Only the ghost outline (밖) and the cube itself remain.
-    # ground shadow: without it "below" has nothing to be below
-    out += ('<ellipse cx="%.1f" cy="%.1f" rx="%.1f" ry="%.1f" fill="#000" opacity=".16"/>'
-            % (cx, cy + s0 + 16, w * 0.92, h * 0.30))
+    # ground shadow: the cube's own footprint (a rhombus in isometric
+    # projection), not a circle — a round shadow under a box is simply wrong
+    gy = 20
+    foot = 'M %.1f %.1f L %.1f %.1f L %.1f %.1f L %.1f %.1f Z' % (
+        cx - w - 8, cy + h + gy, cx, cy + s0 + gy, cx + w + 8, cy + h + gy, cx, cy + gy)
+    out += '<path d="%s" fill="#000" opacity=".15"/>' % foot
 
     # a smaller dashed cube inside the solid one: the interior, drawn the way a
     # technical sketch shows a hidden volume

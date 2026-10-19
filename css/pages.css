@@ -582,3 +582,12 @@
 .cl__scene-bg { position: relative; z-index: 2; }
 .cl__scene .cl__pt { z-index: 3; }
 .cl__scene .cl__pt--behind { z-index: 1; }
+
+/* The gloss of a behind label is lifted in front of the drawing and set beside
+   the word — inside the chip it would be occluded along with the word. */
+.cl__pt-gloss {
+  position: absolute; transform: translate(-50%, -50%); z-index: 4;
+  font-size: 13px; color: var(--text); opacity: .95;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .55), 0 0 10px rgba(0, 0, 0, .35);
+  pointer-events: none; white-space: nowrap;
+}

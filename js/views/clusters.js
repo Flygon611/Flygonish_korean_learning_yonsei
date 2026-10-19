@@ -72,6 +72,16 @@
     var behind = [], front = [];
     c.items.forEach(function (it) { (it.behind ? behind : front).push(it); });
     var makeChip = function (it) {
+      if (it.behind) {
+        /* split: the word stays under the drawing (that overlap IS "behind"),
+           the gloss is lifted in front so it is not cut off too */
+        var word = h('div', { class: 'cl__pt cl__pt--bare cl__pt--behind' },
+          h('span', { class: 'cl__pt-ko' }, it.ko));
+        word.style.left = it.x + '%'; word.style.top = it.y + '%';
+        var gloss = h('div', { class: 'cl__pt-gloss' }, it.zh);
+        gloss.style.left = (it.x + 7) + '%'; gloss.style.top = it.y + '%';
+        return [popFor(word, it.ko, it.zh), gloss];
+      }
         /* Where the picture itself already says it — a cube for the position
            words — a card with its own little cube is just noise. Those scenes
            set `bare` and get plain labels instead. */
@@ -95,9 +105,10 @@
     };
     /* labels marked `behind` go under the picture, so the cube covers part of
        them — that overlap is what makes 뒤 read as "behind" */
+    var flat = function (arr) { return [].concat.apply([], arr); };
     return h('div', { class: 'cl__scene' },
       h('img', { class: 'cl__scene-bg', src: c.scene, alt: '' }),
-      behind.map(makeChip), front.map(makeChip));
+      flat(behind.map(makeChip)), flat(front.map(makeChip)));
   }
 
   /* One small diagram per word. A single big cube with eight labels around it

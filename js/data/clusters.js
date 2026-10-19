@@ -82,7 +82,7 @@
            a hidden volume is drawn */
         { ko: '안', zh: '里面', x: 50, y: 52, dashed: true }, 
         /* 뒤 sits behind the picture: the cube covers half of it */
-        { ko: '뒤', zh: '后面', x: 57, y: 38, behind: true },
+        { ko: '뒤', zh: '后面', x: 63, y: 35, behind: true },
         { ko: '밑', zh: '下面', x: 50, y: 80 },
         { ko: '아래', zh: '下面', x: 63, y: 86 },
         { ko: '밖', zh: '外面', x: 20, y: 26 },
