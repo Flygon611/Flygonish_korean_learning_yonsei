@@ -445,6 +445,12 @@ go('#/vocab?mode=flash');
     check('numbers: 20 is 이십 in one system and 스물 in the other',
       N && N.sino[10][1] === '이십' && N.native[10][1] === '스물',
       N ? N.sino[10][1] + ' / ' + N.native[10][1] : '-');
+    check('numbers: 21 and up are spelled out',
+      !!N && !!N.combine && N.combine.rows.some((r) => r[0] === '21' && r[2] === '스물한 개'),
+      N && N.combine ? N.combine.rows.length + ' rows' : '-');
+    check('numbers: 20 alone becomes 스무 but 21 goes back to 스물',
+      !!N && N.combine.rows.some((r) => r[0] === '20' && r[1] === '스물' && r[2] === '스무 개') &&
+      N.combine.rows.some((r) => r[0] === '21' && r[1] === '스물하나'));
     check('numbers: the counter readings are listed',
       !!N && N.beforeCounter.length >= 4 && N.beforeCounter[0][1] === '한 개',
       N && N.beforeCounter[0] ? N.beforeCounter[0].join(' ') : '-');

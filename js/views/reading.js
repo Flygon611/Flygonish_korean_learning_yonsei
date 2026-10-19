@@ -180,25 +180,40 @@
         h('div', { class: 'numt__n' }, d[0]),
         h('div', { class: 'numt__ko' }, d[1]),
         h('div', { class: 'numt__rom' }, d[2]));
+      const column = (title, rows, uses) => h('div', { class: 'numt__col' },
+        h('div', { class: 'numt__head' }, title),
+        h('div', { class: 'numt__grid' }, rows.map(cell)),
+        h('ul', { class: 'numt__use' }, uses.map((x) => h('li', {}, x))));
+      const trapRow = (t) => h('div', { class: 'numt__traprow' },
+        h('span', { class: 'numt__from' }, t[0]),
+        h('span', { class: 'numt__ex' }, t[1]),
+        h('span', { class: 'numt__zh' }, t[2]));
+      /* 21 and up: tens word + ones word, and only the last digit changes in
+         front of a counter. The book's table stops at the tens, which leaves
+         스물하나 / 스물한 개 unexplained. */
+      const combine = N.combine ? h('div', { class: 'numt__trap' },
+        h('div', { class: 'numt__head' }, '二十几怎么说 · 21 이상'),
+        h('p', { class: 'numt__note' }, N.combine.note),
+        h('p', { class: 'numt__warn' }, N.combine.stuck),
+        h('table', { class: 'numt__table' },
+          h('thead', {}, h('tr', {},
+            h('th', {}, '数'), h('th', {}, '固有数词'),
+            h('th', {}, '接量词'), h('th', {}, '意思'))),
+          h('tbody', {}, N.combine.rows.map((r) => h('tr', {},
+            h('td', { class: 'numt__dig' }, r[0]),
+            h('td', { class: 'numt__plain' }, r[1]),
+            h('td', { class: 'numt__cnt' }, r[2]),
+            h('td', { class: 'numt__zh' }, r[3])))))) : null;
       tail.push(ui.sectionTitle(N.title));
       tail.push(h('section', { class: 'card numt' },
         h('p', { class: 'numt__note' }, N.note),
         h('div', { class: 'numt__cols' },
-          h('div', { class: 'numt__col' },
-            h('div', { class: 'numt__head' }, '汉字数词 · 한자어 수사'),
-            h('div', { class: 'numt__grid' }, N.sino.map(cell)),
-            h('ul', { class: 'numt__use' }, N.usedWith.sino.map((x) => h('li', {}, x)))),
-          h('div', { class: 'numt__col' },
-            h('div', { class: 'numt__head' }, '固有数词 · 고유어 수사'),
-            h('div', { class: 'numt__grid' }, N.native.map(cell)),
-            h('ul', { class: 'numt__use' }, N.usedWith.native.map((x) => h('li', {}, x))))),
+          column('汉字数词 · 한자어 수사', N.sino, N.usedWith.sino),
+          column('固有数词 · 고유어 수사', N.native, N.usedWith.native)),
         h('div', { class: 'numt__trap' },
           h('div', { class: 'numt__head' }, '量词前会变音 · 수사 뒤에서 달라지는 말'),
-          h('div', { class: 'numt__traps' }, N.beforeCounter.map((t) =>
-            h('div', { class: 'numt__traprow' },
-              h('span', { class: 'numt__from' }, t[0]),
-              h('span', { class: 'numt__ex' }, t[1]),
-              h('span', { class: 'numt__zh' }, t[2])))))));
+          h('div', { class: 'numt__traps' }, N.beforeCounter.map(trapRow))),
+        combine));
     }
 
     if (sec.grammar.length) {

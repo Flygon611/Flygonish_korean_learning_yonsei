@@ -433,3 +433,14 @@
 .numt__ex { font-family: var(--font-kr-serif); font-size: 15px; }
 .numt__zh { font-size: 11.5px; color: var(--muted); }
 @media (max-width: 720px) { .numt__cols { grid-template-columns: 1fr; } }
+
+/* 21 and up: tens word glued to ones word, counter changes only the last digit */
+.numt__warn { margin: 0 0 10px; font-size: 12.5px; color: var(--warm); line-height: 1.6; }
+.numt__table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.numt__table th { text-align: left; font-weight: 500; font-size: 11.5px; color: var(--muted);
+  padding: 4px 8px; border-bottom: 1px solid var(--line); }
+.numt__table td { padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.numt__table tr:last-child td { border-bottom: none; }
+.numt__dig { color: var(--muted); font-size: 12px; width: 42px; }
+.numt__plain { font-family: var(--font-kr-serif); }
+.numt__cnt { font-family: var(--font-kr-serif); color: var(--accent); }
