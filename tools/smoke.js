@@ -438,6 +438,18 @@ go('#/vocab?mode=flash');
       senses('삽니다').length === 2, senses('삽니다').join(' / '));
   }
 
+  /* The numeral table belongs on the page where the book teaches it. */
+  {
+    const N = window.YK_NUMBERS;
+    check('numbers: data loaded', !!N && N.sino.length === 19 && N.native.length === 19);
+    check('numbers: 20 is 이십 in one system and 스물 in the other',
+      N && N.sino[10][1] === '이십' && N.native[10][1] === '스물',
+      N ? N.sino[10][1] + ' / ' + N.native[10][1] : '-');
+    check('numbers: the counter readings are listed',
+      !!N && N.beforeCounter.length >= 4 && N.beforeCounter[0][1] === '한 개',
+      N && N.beforeCounter[0] ? N.beforeCounter[0].join(' ') : '-');
+  }
+
   // 3. conjugation is reachable and complete
   const c = YK.conj.conjugate('먹다');
   check('conj: a verb produces all ten forms', c && c.forms.length === 10, c && c.forms.length);

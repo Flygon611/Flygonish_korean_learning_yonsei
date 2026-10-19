@@ -413,3 +413,23 @@
 /* several meanings under one spelling */
 .pop__sense { display: flex; gap: 6px; line-height: 1.55; }
 .pop__num { color: var(--muted); font-size: 11px; min-width: 14px; }
+
+/* Two numeral systems, side by side. The grid is the point: 20 in one column is
+   이십, in the other 스물, and seeing them aligned is what teaches the split. */
+.numt { padding: 16px 18px; }
+.numt__note { margin: 0 0 14px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.numt__cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.numt__head { font-size: 12.5px; color: var(--muted); margin-bottom: 8px; letter-spacing: .02em; }
+.numt__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 5px; }
+.numt__cell { border: 1px solid var(--line); border-radius: 9px; padding: 6px 3px; text-align: center; background: var(--surface); }
+.numt__n { font-size: 10.5px; color: var(--muted); }
+.numt__ko { font-family: var(--font-kr-serif); font-size: 16px; line-height: 1.3; }
+.numt__rom { font-size: 10px; color: var(--muted); }
+.numt__use { margin: 10px 0 0; padding-left: 16px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.numt__trap { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
+.numt__traps { display: flex; flex-wrap: wrap; gap: 8px; }
+.numt__traprow { display: flex; align-items: baseline; gap: 6px; padding: 5px 10px; border-radius: 9px; background: var(--surface-2); }
+.numt__from { font-size: 12.5px; color: var(--warm); }
+.numt__ex { font-family: var(--font-kr-serif); font-size: 15px; }
+.numt__zh { font-size: 11.5px; color: var(--muted); }
+@media (max-width: 720px) { .numt__cols { grid-template-columns: 1fr; } }

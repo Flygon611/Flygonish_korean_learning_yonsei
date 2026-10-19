@@ -170,6 +170,37 @@
         }))));
     }
 
+    /* 第3课第2节 introduces the two numeral systems. A table belongs on the
+       page where it is taught — the book prints one and the numbers are the
+       lesson, not a footnote. */
+    if (window.YK_NUMBERS && window.YK_NUMBERS.lesson === lesson.no &&
+        window.YK_NUMBERS.section === sec.section) {
+      const N = window.YK_NUMBERS;
+      const cell = (d) => h('div', { class: 'numt__cell' },
+        h('div', { class: 'numt__n' }, d[0]),
+        h('div', { class: 'numt__ko' }, d[1]),
+        h('div', { class: 'numt__rom' }, d[2]));
+      tail.push(ui.sectionTitle(N.title));
+      tail.push(h('section', { class: 'card numt' },
+        h('p', { class: 'numt__note' }, N.note),
+        h('div', { class: 'numt__cols' },
+          h('div', { class: 'numt__col' },
+            h('div', { class: 'numt__head' }, '汉字数词 · 한자어 수사'),
+            h('div', { class: 'numt__grid' }, N.sino.map(cell)),
+            h('ul', { class: 'numt__use' }, N.usedWith.sino.map((x) => h('li', {}, x)))),
+          h('div', { class: 'numt__col' },
+            h('div', { class: 'numt__head' }, '固有数词 · 고유어 수사'),
+            h('div', { class: 'numt__grid' }, N.native.map(cell)),
+            h('ul', { class: 'numt__use' }, N.usedWith.native.map((x) => h('li', {}, x))))),
+        h('div', { class: 'numt__trap' },
+          h('div', { class: 'numt__head' }, '量词前会变音 · 수사 뒤에서 달라지는 말'),
+          h('div', { class: 'numt__traps' }, N.beforeCounter.map((t) =>
+            h('div', { class: 'numt__traprow' },
+              h('span', { class: 'numt__from' }, t[0]),
+              h('span', { class: 'numt__ex' }, t[1]),
+              h('span', { class: 'numt__zh' }, t[2])))))));
+    }
+
     if (sec.grammar.length) {
       tail.push(ui.sectionTitle('本节的语法 · ' + sec.grammar.length + ' 条'));
       /* Full width: a pattern is the thing being taught here, so it gets the
