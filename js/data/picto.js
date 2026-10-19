@@ -1,10 +1,7 @@
 /* Korean word -> illustration.
    - assets/openmoji/* : from OpenMoji (CC BY-SA 4.0)
    - assets/picto/*    : drawn or generated here (tools/build_pictos.py,
-                         build_scenes.py, build_dishes.py, build_more.py) —
-                         numerals, position words, family composites, schematic
-                         concepts, time relations, Korean dishes, classroom
-                         things, family people, school subjects, tastes, shops
+                         build_scenes.py, build_dishes.py, build_more.py)
    Every entry was looked at on a contact sheet before being wired up. */
 window.YK_PICTO = {
  "사람": "assets/openmoji/1f9d1.svg",
@@ -440,5 +437,40 @@ window.YK_PICTO = {
  "한식집": "assets/picto/more-shop-korean.svg",
  "중국집": "assets/picto/more-shop-chinese.svg",
  "일식집": "assets/picto/more-shop-japanese.svg",
- "양식집": "assets/picto/more-shop-western.svg"
+ "양식집": "assets/picto/more-shop-western.svg",
+ "이십": "assets/picto/n-20.svg",
+ "삼십": "assets/picto/n-30.svg",
+ "사십": "assets/picto/n-40.svg",
+ "오십": "assets/picto/n-50.svg",
+ "육십": "assets/picto/n-60.svg",
+ "칠십": "assets/picto/n-70.svg",
+ "팔십": "assets/picto/n-80.svg",
+ "구십": "assets/picto/n-90.svg",
+ "원": "assets/picto/n-won.svg",
+ "반": "assets/picto/n-half.svg",
+ "요일": "assets/picto/d-weekday.svg",
+ "월요일": "assets/picto/d-mon.svg",
+ "화요일": "assets/picto/d-tue.svg",
+ "수요일": "assets/picto/d-wed.svg",
+ "목요일": "assets/picto/d-thu.svg",
+ "금요일": "assets/picto/d-fri.svg",
+ "토요일": "assets/picto/d-sat.svg",
+ "일요일": "assets/picto/d-sun.svg",
+ "이름": "assets/picto/e-name.svg",
+ "성": "assets/picto/e-surname.svg",
+ "직업": "assets/picto/e-job.svg",
+ "나라": "assets/picto/e-country.svg",
+ "외국인": "assets/picto/e-foreigner.svg",
+ "고향": "assets/picto/e-hometown.svg",
+ "없다": "assets/picto/e-none.svg",
+ "어디": "assets/picto/e-where.svg",
+ "먹다": "assets/picto/e-eat.svg",
+ "인사하다": "assets/picto/e-bow.svg",
+ "반갑다": "assets/picto/e-glad.svg",
+ "처음 뵙겠습니다": "assets/picto/e-meet.svg",
+ "하다": "assets/picto/e-do.svg",
+ "아니요": "assets/picto/e-no.svg",
+ "사과": "assets/openmoji/1f34e.svg",
+ "좋다": "assets/openmoji/1f44d.svg",
+ "나쁘다": "assets/openmoji/1f44e.svg"
 };

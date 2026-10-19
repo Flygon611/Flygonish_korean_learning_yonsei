@@ -175,6 +175,140 @@ def shop(colour, dish):
     return svg(body)
 
 
+
+
+# ----------------------------------------------------- numerals and days
+def sino2(hanzi, colour='#b23a48'):
+    """A two-character Sino numeral in the same seal frame as the generated set."""
+    size = 26 if len(hanzi) <= 2 else 18
+    body = (f'<rect x="12" y="12" width="48" height="48" rx="6" fill="none" stroke="{colour}" '
+            f'stroke-width="2.4"/>')
+    body += (f'<text x="36" y="{36 + size * 0.36:.0f}" font-size="{size}" fill="{colour}" '
+             f'text-anchor="middle" font-family="Songti SC, serif">{hanzi}</text>')
+    return svg(body)
+
+
+def won():
+    """원: a coin with the ₩ mark."""
+    return svg(f'<circle cx="36" cy="36" r="22" fill="#f3e6c4" stroke="{K}" stroke-width="{W}"/>'
+               + f'<text x="36" y="45" font-size="24" font-weight="700" fill="{BROWN}" '
+                 f'text-anchor="middle" font-family="-apple-system,sans-serif">₩</text>')
+
+
+def half():
+    """반: a circle cut in half."""
+    return svg(f'<circle cx="36" cy="36" r="21" fill="{WHITE}" stroke="{K}" stroke-width="{W}"/>'
+               + f'<path d="M36 15 a21 21 0 0 0 0 42 z" fill="{BLUE}"/>'
+               + line('M36 15 v42', 2))
+
+
+def weekday(hanzi, colour):
+    """A calendar tile: the day's hanja under a coloured header."""
+    body = shape('M13 18 h46 v38 h-46 z', WHITE)
+    body += shape('M13 18 h46 v10 h-46 z', colour)
+    body += f'<circle cx="22" cy="23" r="2" fill="#fff"/><circle cx="50" cy="23" r="2" fill="#fff"/>'
+    body += (f'<text x="36" y="46" font-size="22" fill="{DARK}" text-anchor="middle" '
+             f'font-family="Songti SC, serif">{hanzi}</text>')
+    return svg(body)
+
+
+# ------------------------------------------------------------- everyday
+def name_tag(text='', colour=BLUE):
+    body = shape('M12 24 h48 v24 h-48 z', WHITE)
+    body += shape('M12 24 h48 v7 h-48 z', colour)
+    body += line('M20 40 h20', 2)
+    if text:
+        body += (f'<text x="36" y="45" font-size="14" fill="{DARK}" text-anchor="middle" '
+                 f'font-family="Songti SC, serif">{text}</text>')
+    return svg(body)
+
+
+def briefcase():
+    return svg(shape('M12 26 h48 v28 h-48 z', BROWN)
+               + line('M28 26 v-6 h16 v6', 2.4)
+               + line('M12 36 h48', 2)
+               + shape('M30 36 h12 v6 h-12 z', CREAM))
+
+
+def globe():
+    body = f'<circle cx="36" cy="36" r="21" fill="{BLUE}" stroke="{K}" stroke-width="{W}"/>'
+    body += line('M15 36 h42 M36 15 v42', 1.6)
+    body += line('M21 24 q15 8 30 0 M21 48 q15 -8 30 0', 1.6)
+    return svg(body)
+
+
+def empty_box():
+    return svg(shape('M16 22 h40 v34 h-40 z', '#f2f4f8')
+               + line('M16 22 h40 v34 h-40 z')
+               + line('M24 30 l24 18 M48 30 l-24 18', 2.6))
+
+
+def where():
+    body = shape('M36 56 q-14 -16 -14 -26 a14 14 0 0 1 28 0 q0 10 -14 26 z', RED)
+    body += f'<circle cx="36" cy="30" r="6" fill="#fff"/>'
+    body += (f'<text x="36" y="34.5" font-size="10" font-weight="700" fill="{RED}" '
+             f'text-anchor="middle" font-family="-apple-system,sans-serif">?</text>')
+    return svg(body)
+
+
+def eating():
+    """먹다: a spoon and chopsticks, angled the way they sit on a table."""
+    body = (f'<ellipse cx="24" cy="26" rx="6" ry="8" fill="{GREY}" stroke="{K}" '
+            f'stroke-width="1.8"/>')
+    body += line('M24 34 v22', 3.4)
+    for dx in (40, 46, 52):
+        body += line('M%d 14 v42' % dx, 2.6)
+    return svg(body)
+
+
+def bowing():
+    """인사하다: a person bending forward."""
+    body = f'<circle cx="26" cy="26" r="9" fill="{CREAM}" stroke="{K}" stroke-width="{W}"/>'
+    body += shape('M18 50 q8 -14 22 -8 q8 4 -2 12 z', BLUE)
+    body += line('M46 34 q8 6 6 14', 3)
+    return svg(body)
+
+
+def happy_greet():
+    body = f'<circle cx="30" cy="28" r="13" fill="{CREAM}" stroke="{K}" stroke-width="{W}"/>'
+    body += line('M24 24 q6 5 12 0', 1.8)
+    body += f'<circle cx="25" cy="26" r="1.6" fill="{K}"/><circle cx="35" cy="26" r="1.6" fill="{K}"/>'
+    body += shape('M18 62 q0 -14 12 -14 t12 14 z', BLUE)
+    body += line('M48 40 q6 -8 4 -14', 2.6)
+    body += line('M52 26 l6 -4 M52 26 l-7 -1', 2)
+    return svg(body)
+
+
+def handshake():
+    body = shape('M6 40 q10 -8 20 -2 l8 6 q-6 8 -14 6 z', CREAM)
+    body += shape('M66 40 q-10 -8 -20 -2 l-8 6 q6 8 14 6 z', CREAM)
+    body += line('M6 40 q10 -8 20 -2 M66 40 q-10 -8 -20 -2', 2)
+    body += line('M26 44 l8 6 M46 44 l-8 6', 1.8)
+    return svg(body)
+
+
+def doing_hand():
+    body = shape('M24 34 q-6 -2 -6 -8 q0 -6 6 -6 q-4 -8 4 -8 q6 0 7 6 q4 -4 8 0 q3 5 -2 9 '
+                 'l-4 14 q-2 12 -14 10 q-10 -2 -9 -12 z', CREAM)
+    body += line('M24 34 q-6 -2 -6 -8 q0 -6 6 -6 q-4 -8 4 -8 q6 0 7 6 q4 -4 8 0 q3 5 -2 9',
+                 1.8)
+    return svg(body)
+
+
+def no():
+    return svg(f'<circle cx="36" cy="36" r="21" fill="{WHITE}" stroke="{RED}" stroke-width="3"/>'
+               + line('M22 22 l28 28', 4))
+
+
+def homeland():
+    house = shape('M22 34 l14 -12 l14 12 v22 h-28 z', CREAM)
+    house += line('M22 34 l14 -12 l14 12 v22 h-28 z')
+    heart = (f'<path d="M36 60 q-9 -7 -9 -13 a5 5 0 0 1 9 -3 a5 5 0 0 1 9 3 q0 6 -9 13 z" '
+             f'fill="{RED}" stroke="{K}" stroke-width="1.6"/>')
+    return svg(house + heart)
+
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     made = [
@@ -217,6 +351,35 @@ def main():
                                             + line('M36 40 v6'))),
         ('양식집', 'more-shop-western', shop('#3f7a3f', line('M30 56 v-12 M42 56 v-12', 2.4)
                                             + line('M30 44 q6 -4 12 0', 2))),
+    ]
+    made += [
+        ('이십', 'n-20', sino2('二十')), ('삼십', 'n-30', sino2('三十')),
+        ('사십', 'n-40', sino2('四十')), ('오십', 'n-50', sino2('五十')),
+        ('육십', 'n-60', sino2('六十')), ('칠십', 'n-70', sino2('七十')),
+        ('팔십', 'n-80', sino2('八十')), ('구십', 'n-90', sino2('九十')),
+        ('원', 'n-won', won()), ('반', 'n-half', half()),
+        ('요일', 'd-weekday', weekday('曜', '#6b5b9b')),
+        ('월요일', 'd-mon', weekday('月', '#4c6ef5')),
+        ('화요일', 'd-tue', weekday('火', '#e8590c')),
+        ('수요일', 'd-wed', weekday('水', '#3a5f8b')),
+        ('목요일', 'd-thu', weekday('木', '#3f7a3f')),
+        ('금요일', 'd-fri', weekday('金', '#b8860b')),
+        ('토요일', 'd-sat', weekday('土', '#8b6b3a')),
+        ('일요일', 'd-sun', weekday('日', '#c8102e')),
+        ('이름', 'e-name', name_tag()),
+        ('성', 'e-surname', name_tag('姓', '#8b6b3a')),
+        ('직업', 'e-job', briefcase()),
+        ('나라', 'e-country', globe()),
+        ('외국인', 'e-foreigner', person('adult', badge('他', colour='#3f7a3f'))),
+        ('고향', 'e-hometown', homeland()),
+        ('없다', 'e-none', empty_box()),
+        ('어디', 'e-where', where()),
+        ('먹다', 'e-eat', eating()),
+        ('인사하다', 'e-bow', bowing()),
+        ('반갑다', 'e-glad', happy_greet()),
+        ('처음 뵙겠습니다', 'e-meet', handshake()),
+        ('하다', 'e-do', doing_hand()),
+        ('아니요', 'e-no', no()),
     ]
     for ko, stem, text in made:
         open(os.path.join(OUT, stem + '.svg'), 'w', encoding='utf-8').write(text)
