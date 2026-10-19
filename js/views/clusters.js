@@ -69,20 +69,52 @@
   }
 
   function sceneBlock(c) {
-    return h('div', { class: 'cl__scene' },
-      h('img', { class: 'cl__scene-bg', src: c.scene, alt: '' }),
-      c.items.map(function (it) {
-        var chip = h('div', { class: 'cl__pt' + (c.compact ? ' cl__pt--compact' : '') },
-          art(it.ko),
-          h('span', { class: 'cl__pt-ko' }, it.alt ? it.ko + ' · ' + it.alt : it.ko),
+    var behind = [], front = [];
+    c.items.forEach(function (it) { (it.behind ? behind : front).push(it); });
+    var makeChip = function (it) {
+        /* Where the picture itself already says it — a cube for the position
+           words — a card with its own little cube is just noise. Those scenes
+           set `bare` and get plain labels instead. */
+        var bare = c.bare;
+        var chip = h('div', {
+          class: 'cl__pt' + (c.compact ? ' cl__pt--compact' : '') + (bare ? ' cl__pt--bare' : '')
+            + (it.tf ? ' cl__pt--onface' : ''),
+        },
+          bare ? null : art(it.ko),
+          it.dashed
+            ? h('svg', { class: 'cl__pt-dash', width: '54', height: '24',
+                         viewBox: '0 0 54 24' },
+                h('text', { x: '27', y: '18', 'text-anchor': 'middle',
+                            class: 'cl__pt-dashtext' }, it.ko))
+            : h('span', { class: 'cl__pt-ko' }, it.alt ? it.ko + ' · ' + it.alt : it.ko),
           h('span', { class: 'cl__pt-zh' }, it.zh));
         chip.style.left = it.x + '%';
         chip.style.top = it.y + '%';
+        if (it.tf) chip.style.transform = 'translate(-50%, -50%) ' + it.tf;
         return popFor(chip, it.ko, it.zh);
-      }));
+    };
+    /* labels marked `behind` go under the picture, so the cube covers part of
+       them — that overlap is what makes 뒤 read as "behind" */
+    return h('div', { class: 'cl__scene' },
+      h('img', { class: 'cl__scene-bg', src: c.scene, alt: '' }),
+      behind.map(makeChip), front.map(makeChip));
   }
 
-  var KINDS = { hada: hadaBlock, pairs: pairsBlock, grid: gridBlock, scale: scaleBlock, scene: sceneBlock };
+  /* One small diagram per word. A single big cube with eight labels around it
+     reads as a label ring, not as a set of directions — each relation has to be
+     shown on its own. */
+  function pictosBlock(c) {
+    return h('div', { class: 'cl__pictos' }, c.items.map(function (it) {
+      var cell = h('div', { class: 'cl__pcell' },
+        h('div', { class: 'cl__part' }, art(it.ko) || h('span', { class: 'cl__pnone' }, '·')),
+        h('div', { class: 'cl__pko' }, it.ko),
+        h('div', { class: 'cl__pzh' }, it.zh));
+      return popFor(cell, it.ko, it.zh);
+    }));
+  }
+
+  var KINDS = { hada: hadaBlock, pairs: pairsBlock, grid: gridBlock, scale: scaleBlock,
+                scene: sceneBlock, pictos: pictosBlock };
 
   /* ------------------------------------------------------------ public */
 

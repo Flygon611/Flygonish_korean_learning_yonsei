@@ -49,18 +49,43 @@
 
     /* ------------------------------------------------------ 2-3 方位词 */
     {
-      lesson: 2, section: 3, kind: 'scene', scene: 'assets/scene/cube.svg',
+      lesson: 2, section: 3, kind: 'pictos',
       title: '어디에 있어요? · 方位词都指哪儿',
-      note: '同一个方块，八个位置。앞/뒤 是前后，위/밑(아래) 是上下，안/밖 是内外，옆 是旁边。',
+      note: '每个词一张小图：方块是参照物，蓝点是位置。앞/뒤 是前后，위/밑(아래) 是上下，안/밖 是内外，옆 是旁边。',
       items: [
-        { ko: '위', zh: '上面', x: 50, y: 8 },
-        { ko: '밑', zh: '下面', x: 22, y: 88 },
-        { ko: '아래', zh: '下面', x: 78, y: 88 },
-        { ko: '앞', zh: '前面', x: 10, y: 62 },
-        { ko: '뒤', zh: '后面', x: 88, y: 26 },
-        { ko: '옆', zh: '旁边', x: 88, y: 58 },
-        { ko: '안', zh: '里面', x: 50, y: 50 },
-        { ko: '밖', zh: '外面', x: 14, y: 20 },
+        { ko: '앞', zh: '前面' },
+        { ko: '뒤', zh: '后面' },
+        { ko: '위', zh: '上面' },
+        { ko: '밑', zh: '下面' },
+        { ko: '아래', zh: '下面' },
+        { ko: '옆', zh: '旁边' },
+        { ko: '안', zh: '里面' },
+        { ko: '밖', zh: '外面' },
+      ],
+    },
+
+    /* ------------------------------------------------------ 2-3 方位词 */
+    {
+      lesson: 2, section: 3, kind: 'scene', scene: 'assets/scene/cube.svg',
+      bare: true,
+      title: '어디에 있어요? · 方位词都指哪儿',
+      note: '字贴在立方体对应的面上：위 在顶面、앞 在左前面、옆 在右前面；안 用虚线字和内部虚线方块表示「里面」；밖/뒤/밑/아래 在方块之外。',
+      items: [
+        /* the isometric matrices make the words lie on the faces instead of
+           floating flat beside them */
+        { ko: '위', zh: '上面', x: 50, y: 40,
+          tf: 'matrix(0.90, 0.52, -0.90, 0.52, 0, 0)' },
+        { ko: '앞', zh: '前面', x: 44, y: 59,
+          tf: 'matrix(0.90, 0.52, 0, 1, 0, 0)' },
+        { ko: '옆', zh: '旁边', x: 63, y: 57 },
+        /* dashed type + the dashed inner cube: the word itself is drawn the way
+           a hidden volume is drawn */
+        { ko: '안', zh: '里面', x: 50, y: 52, dashed: true }, 
+        /* 뒤 sits behind the picture: the cube covers half of it */
+        { ko: '뒤', zh: '后面', x: 57, y: 38, behind: true },
+        { ko: '밑', zh: '下面', x: 50, y: 80 },
+        { ko: '아래', zh: '下面', x: 63, y: 86 },
+        { ko: '밖', zh: '外面', x: 20, y: 26 },
       ],
     },
 

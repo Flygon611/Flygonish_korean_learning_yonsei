@@ -492,7 +492,7 @@ go('#/vocab?mode=flash');
   {
     const list = window.YK_CLUSTERS || [];
     check('clusters: loaded', list.length >= 10, list.length + ' clusters');
-    const kinds = ['hada', 'scene', 'pairs', 'grid', 'scale'];
+    const kinds = ['hada', 'scene', 'pairs', 'grid', 'scale', 'pictos'];
     check('clusters: every kind is known', list.every((c) => kinds.indexOf(c.kind) >= 0),
       list.map((c) => c.kind).join(','));
     let bad = 0;

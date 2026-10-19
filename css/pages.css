@@ -521,3 +521,60 @@
 .numt__cell .numt__ko {
   font-family: var(--font-ko);
 }
+
+/* Bare labels for scenes where the picture is the reference itself: no card,
+   no icon, just the word sitting where it points. A soft halo keeps it legible
+   over the drawing without putting a box back around it. */
+.cl__pt--bare {
+  /* Not a card — but 안 sits on a pale blue face, so the label needs a faint
+     wash behind it or it disappears. No border, no shadow, no icon. */
+  background: var(--bg);
+  border: none; box-shadow: none; padding: 2px 8px; border-radius: 8px;
+  backdrop-filter: blur(3px);
+  text-shadow: none;
+}
+.cl__pt--bare:hover { transform: translate(-50%, -50%) scale(1.12); border: none; }
+/* The drawing is a reference, not the content — the words have to win. */
+.cl__pt--bare .cl__pt-ko { font-size: 30px; font-weight: 700; line-height: 1.1; }
+.cl__pt--bare .cl__pt-zh { font-size: 14px; opacity: .78; margin-top: 2px; }
+@media (max-width: 720px) {
+  .cl__pt--bare .cl__pt-ko { font-size: 13px; }
+  .cl__pt--bare .cl__pt-zh { display: block; font-size: 9.5px; }
+}
+
+/* One diagram per word — the position words only make sense one at a time. */
+.cl__pictos { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; }
+.cl__pcell {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 10px 6px 8px; border: 1px solid var(--line); border-radius: 14px;
+  background: var(--surface); cursor: pointer;
+  transition: transform .18s var(--ease-out), border-color .18s;
+}
+.cl__pcell:hover { transform: translateY(-2px); border-color: var(--line-2); }
+.cl__part { width: 56px; height: 56px; display: grid; place-items: center; }
+.cl__part img { width: 100%; height: 100%; object-fit: contain; }
+.cl__pnone { color: var(--muted); font-size: 20px; }
+.cl__pko { font-family: var(--font-ko); font-size: 22px; font-weight: 700; line-height: 1.2; }
+.cl__pzh { font-size: 12px; color: var(--muted); }
+
+/* Words lying on a cube face: the faces are pale in both themes, so the label
+   needs dark ink and no wash behind it — the perspective itself is the point. */
+.cl__pt--onface { background: none; color: #1e2942; text-shadow: none; }
+/* both the word and its gloss stay on the face — the word steps down a little
+   so the pair fits inside the plane */
+.cl__pt--onface .cl__pt-ko { color: #1e2942; font-size: 19px; line-height: 1.05; }
+.cl__pt--onface .cl__pt-zh { color: #33405c; font-size: 10.5px; line-height: 1.1; margin-top: 1px; }
+
+/* The inside label is drawn as a dashed outline, matching the dashed inner
+   cube: it is the one position that is not on a visible face. */
+.cl__pt-dash { display: block; overflow: visible; }
+.cl__pt-dashtext {
+  font-family: var(--font-ko); font-size: 19px; font-weight: 700;
+  fill: none; stroke: #8a5a00; stroke-width: 1.1; stroke-dasharray: 3 2;
+  stroke-linejoin: round;
+}
+
+/* 뒤 is drawn under the picture; the cube's silhouette cutting through it is
+   the cue that says "behind". */
+.cl__scene .cl__pt { z-index: 2; }
+.cl__scene-bg + .cl__pt, .cl__scene .cl__pt--behind { z-index: 1; }

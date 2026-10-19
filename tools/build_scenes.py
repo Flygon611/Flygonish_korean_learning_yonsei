@@ -34,27 +34,55 @@ def desk():
 
 
 def cube():
-    """One big isometric cube: every position word points at a place on it."""
-    cx, cy, s0 = 300, 300, 150
+    """The reference cube, with a leader line to every position word.
+
+    Words like 안 / 밖 / 옆 only make sense against a shape, so the drawing does
+    the explaining: the solid cube is the object, the dashed ghost around it is
+    "outside", the lit patch on the front face is "inside", and a dashed line
+    runs from each label to the exact spot it names.
+    """
+    W, H = 900, 640
+    cx, cy, s0 = 450, 320, 112
     w, h = s0 * 0.87, s0 * 0.5
+    out = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" width="%d" '
+           'height="%d">' % (W, H, W, H))
+
+    # (no ghost outline: a dashed box around the cube read as decoration, not
+    #  as "outside" — 밖 is carried by its own small diagram instead)
+
+    # the solid cube
     top = 'M %.1f %.1f L %.1f %.1f L %.1f %.1f L %.1f %.1f Z' % (
         cx, cy - s0, cx + w, cy - h, cx, cy, cx - w, cy - h)
     left = 'M %.1f %.1f L %.1f %.1f L %.1f %.1f L %.1f %.1f Z' % (
         cx - w, cy - h, cx, cy, cx, cy + s0, cx - w, cy + h)
     right = 'M %.1f %.1f L %.1f %.1f L %.1f %.1f L %.1f %.1f Z' % (
         cx, cy, cx + w, cy - h, cx + w, cy + h, cx, cy + s0)
-    out = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600">'
-           '<rect width="600" height="600" fill="none"/>')
-    out += '<path d="%s" fill="#dfe6f7" stroke="#5a6a94" stroke-width="2"/>' % top
-    out += '<path d="%s" fill="#c3cff0" stroke="#5a6a94" stroke-width="2"/>' % left
-    out += '<path d="%s" fill="#a8b8e6" stroke="#5a6a94" stroke-width="2"/>' % right
-    # faint axis lines to suggest the space around it
-    for x1, y1, x2, y2 in ((cx, 40, cx, 120), (cx, 480, cx, 560),
-                           (40, cy + 40, 120, cy + 40), (480, cy + 40, 560, cy + 40)):
-        out += ('<path d="M%d %d L%d %d" stroke="#9aa7c7" stroke-width="1.6" '
-                'stroke-dasharray="5 5"/>' % (x1, y1, x2, y2))
-    return out + '</svg>'
+    out += '<path d="%s" fill="#e4eafb" stroke="#5a6a94" stroke-width="2.4"/>' % top
+    out += '<path d="%s" fill="#c3cff0" stroke="#5a6a94" stroke-width="2.4"/>' % left
+    out += '<path d="%s" fill="#a8b8e6" stroke="#5a6a94" stroke-width="2.4"/>' % right
 
+
+    # No leader lines: the words sit where they point, which is what the
+    # reader asked for. Only the ghost outline (밖) and the cube itself remain.
+    # ground shadow: without it "below" has nothing to be below
+    out += ('<ellipse cx="%.1f" cy="%.1f" rx="%.1f" ry="%.1f" fill="#000" opacity=".16"/>'
+            % (cx, cy + s0 + 16, w * 0.92, h * 0.30))
+
+    # a smaller dashed cube inside the solid one: the interior, drawn the way a
+    # technical sketch shows a hidden volume
+    k = 0.52
+    iw, ih, is0 = w * k, h * k, s0 * k
+    icy = cy + s0 * (1 - k) * 0.42
+    itop = 'M %.1f %.1f L %.1f %.1f L %.1f %.1f L %.1f %.1f Z' % (
+        cx, icy - is0, cx + iw, icy - ih, cx, icy, cx - iw, icy - ih)
+    ileft = 'M %.1f %.1f L %.1f %.1f L %.1f %.1f L %.1f %.1f Z' % (
+        cx - iw, icy - ih, cx, icy, cx, icy + is0, cx - iw, icy + ih)
+    iright = 'M %.1f %.1f L %.1f %.1f L %.1f %.1f L %.1f %.1f Z' % (
+        cx, icy, cx + iw, icy - ih, cx + iw, icy + ih, cx, icy + is0)
+    for d in (itop, ileft, iright):
+        out += ('<path d="%s" fill="none" stroke="#e0a800" stroke-width="2" '
+                'stroke-dasharray="6 5" stroke-linejoin="round"/>' % d)
+    return out + '</svg>'
 
 
 LINE = '#b9c2d6'
@@ -72,29 +100,25 @@ def family():
     out = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" width="%d" '
            'height="%d">' % (W, H, W, H))
     y1, y2, y3, y4 = 98, 328, 541, 705          # 12%, 40%, 66%, 86%
-    # grandparents: two couples
     for a, b in ((160, 330), (670, 840)):
         out += ('<path d="M%d %d H%d" stroke="%s" stroke-width="2"/>' % (a, y1, b, LINE))
-    # each couple down to their child
     out += ('<path d="M245 %d V%d H280" fill="none" stroke="%s" stroke-width="2"/>'
             % (y1, y2 - 40, LINE))
     out += ('<path d="M755 %d V%d H720" fill="none" stroke="%s" stroke-width="2"/>'
             % (y1, y2 - 40, LINE))
-    # marriage line between the parents
     out += ('<path d="M280 %d H720" stroke="%s" stroke-width="2"/>' % (y2, LINE))
     out += ('<circle cx="500" cy="%d" r="5" fill="%s"/>' % (y2, SMALL))
-    # down to the speaker and across to the siblings
     out += ('<path d="M500 %d V%d" stroke="%s" stroke-width="2"/>' % (y2, y3 - 60, LINE))
     out += ('<path d="M120 %d H880" stroke="%s" stroke-width="2"/>' % (y3 - 60, LINE))
     for x in (120, 380, 640, 880):
         out += ('<path d="M%d %d V%d" stroke="%s" stroke-width="2"/>'
                 % (x, y3 - 60, y3 - 18, LINE))
-    # the younger siblings hang under 동생
     out += ('<path d="M880 %d V%d H770" fill="none" stroke="%s" stroke-width="1.6" '
             'stroke-dasharray="4 4"/>' % (y3 + 18, y4 - 14, LINE))
     out += ('<path d="M880 %d V%d H930" fill="none" stroke="%s" stroke-width="1.6" '
             'stroke-dasharray="4 4"/>' % (y3 + 18, y4 - 14, LINE))
     return out + '</svg>'
+
 
 def room():
     """A classroom wall seen from the front: for board / window / door words."""
