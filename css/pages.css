@@ -444,3 +444,65 @@
 .numt__dig { color: var(--muted); font-size: 12px; width: 42px; }
 .numt__plain { font-family: var(--font-kr-serif); }
 .numt__cnt { font-family: var(--font-kr-serif); color: var(--accent); }
+
+/* ---------------------------------------------------------------- clusters
+   Words of the same kind, shown together. The point is the RELATION between
+   them — noun+하다, antonym pairs, a temperature line — so the shapes are few
+   and reused rather than one bespoke layout per lesson. */
+.cl { margin-top: 14px; }
+.cl__card { padding: 16px 18px; }
+.cl__title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.cl__note { margin: 0 0 14px; color: var(--muted); font-size: 12.5px; line-height: 1.65; }
+.cl__note strong { color: var(--text); font-weight: 600; }
+
+.cl__table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.cl__table th { text-align: left; font-weight: 500; font-size: 11.5px; color: var(--muted);
+  padding: 5px 10px; border-bottom: 1px solid var(--line); }
+.cl__table td { padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.cl__table tr:last-child td { border-bottom: none; }
+.cl__ko { font-family: var(--font-kr-serif); font-size: 16px; white-space: nowrap; }
+.cl__ko--verb { color: var(--accent); }
+.cl__zh { color: var(--muted); font-size: 12.5px; }
+.cl__arrow { color: var(--muted); text-align: center; width: 34px; }
+.cl__table--pairs td { width: auto; }
+.cl__table--grid td:first-child { font-family: var(--font-kr-serif); }
+
+/* ordered line: cold -> hot, with the direction made explicit */
+.cl__scale { display: flex; align-items: stretch; flex-wrap: wrap; gap: 6px; }
+.cl__step { display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--surface); cursor: pointer;
+  transition: transform .18s var(--ease-out), border-color .18s; }
+.cl__step:hover { transform: translateY(-2px); border-color: var(--line-2); }
+.cl__scale-arrow { align-self: center; color: var(--muted); font-size: 13px; }
+
+/* picture with the words placed on it */
+.cl__card--scene { padding-bottom: 10px; }
+.cl__scene { position: relative; width: 100%; }
+.cl__scene-bg { display: block; width: 100%; height: auto; }
+.cl__pt { position: absolute; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  padding: 5px 8px 4px; border-radius: 11px; cursor: pointer;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border: 1px solid var(--line); box-shadow: var(--shadow-1);
+  transition: transform .16s var(--ease-out), border-color .16s, box-shadow .16s; }
+.cl__pt:hover { transform: translate(-50%, -50%) scale(1.07); border-color: var(--line-2); }
+.cl__img { width: 34px; height: 34px; object-fit: contain; }
+.cl__pt-ko { font-family: var(--font-kr-serif); font-size: 14px; line-height: 1.2; white-space: nowrap; }
+.cl__pt-zh { font-size: 10px; color: var(--muted); line-height: 1.2; white-space: nowrap; }
+@media (max-width: 720px) {
+  .cl__img { width: 26px; height: 26px; }
+  .cl__pt-ko { font-size: 12px; }
+  .cl__pt-zh { display: none; }
+}
+
+/* compact chips: a family tree has fourteen labels, so each one is smaller and
+   carries only the Korean word — the gloss lives in the note and the popover. */
+.cl__pt--compact { padding: 4px 7px 3px; }
+.cl__pt--compact .cl__img { width: 26px; height: 26px; }
+.cl__pt--compact .cl__pt-ko { font-size: 13px; }
+.cl__pt--compact .cl__pt-zh { font-size: 9.5px; }
+@media (max-width: 720px) {
+  .cl__pt--compact .cl__img { width: 20px; height: 20px; }
+  .cl__pt--compact .cl__pt-ko { font-size: 11px; }
+}

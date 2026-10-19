@@ -487,6 +487,28 @@ go('#/vocab?mode=flash');
       })());
   }
 
+  /* Teaching clusters: same-kind words shown together. The data must stay
+     attached to a real section, and every scene must point at a backdrop. */
+  {
+    const list = window.YK_CLUSTERS || [];
+    check('clusters: loaded', list.length >= 10, list.length + ' clusters');
+    const kinds = ['hada', 'scene', 'pairs', 'grid', 'scale'];
+    check('clusters: every kind is known', list.every((c) => kinds.indexOf(c.kind) >= 0),
+      list.map((c) => c.kind).join(','));
+    let bad = 0;
+    list.forEach((c) => {
+      const L = window.YK_LESSONS.lessons.find((x) => x.no === c.lesson);
+      const sec = L && L.sections.find((x) => x.section === c.section);
+      if (!sec) bad++;
+      if (c.kind === 'scene' && (!c.items || !c.items.length)) bad++;
+    });
+    check('clusters: each one attaches to a real section', bad === 0, String(bad));
+    /* 형/오빠 and 누나/언니 are the same person: one node, two words */
+    const fam = list.find((c) => c.lesson === 3 && c.section === 2);
+    const node = fam && fam.items.find((i) => i.alt === '오빠');
+    check('clusters: 형 and 오빠 share one node', !!node, node ? node.ko + '/' + node.alt : '-');
+  }
+
   // 3. conjugation is reachable and complete
   const c = YK.conj.conjugate('먹다');
   check('conj: a verb produces all ten forms', c && c.forms.length === 10, c && c.forms.length);

@@ -170,6 +170,13 @@
         }))));
     }
 
+    /* Same-kind words deserve a shared shape: noun+하다 as one table, desk
+       items on one picture, position words around one cube. */
+    if (YK.clusters) {
+      const cl = YK.clusters.render(lesson.no, sec.section);
+      if (cl) tail.push(cl);
+    }
+
     /* 第3课第2节 introduces the two numeral systems. A table belongs on the
        page where it is taught — the book prints one and the numbers are the
        lesson, not a footnote. */
