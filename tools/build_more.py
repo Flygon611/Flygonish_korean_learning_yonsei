@@ -435,6 +435,192 @@ def tasteless():
 
 
 
+
+
+# ------------------------------------------------------------- phone set
+def phone(mark=None, colour=BLUE):
+    """A handset in the same outline language, with an action mark on top."""
+    body = (f'<rect x="22" y="14" width="28" height="44" rx="5" fill="#eef1f6" '
+            f'stroke="{K}" stroke-width="{W}"/>')
+    body += f'<rect x="27" y="20" width="18" height="26" rx="2" fill="{WHITE}" stroke="{K}" stroke-width="1.4"/>'
+    body += mark or ''
+    return body
+
+
+def call_out():
+    return svg(phone() + arrow('M52 22 q10 6 0 14', BLUE, 2.6)
+               + arrow('M50 36 l4 -2 -1 5 z', BLUE, 1))
+
+
+def call_in():
+    return svg(phone() + arrow('M14 22 q10 6 0 14', '#2f9e44', 2.6)
+               + arrow('M16 36 l4 -2 -1 5 z', '#2f9e44', 1))
+
+
+def call_end():
+    return svg(phone() + line('M10 18 l52 36', 2.8, ) + line('M14 22 l6 -2', 2))
+
+
+def power_on():
+    return svg(phone(f'<path d="M36 26 v9" stroke="#2f9e44" stroke-width="2.6" '
+                     f'stroke-linecap="round"/>'
+                     f'<path d="M31 29 a6 6 0 1 0 10 0" fill="none" stroke="#2f9e44" '
+                     f'stroke-width="2.2"/>'))
+
+
+def power_off():
+    return svg(phone(f'<path d="M36 26 v9" stroke="#9aa3b2" stroke-width="2.6" '
+                     f'stroke-linecap="round"/>'
+                     f'<path d="M31 29 a6 6 0 1 0 10 0" fill="none" stroke="#9aa3b2" '
+                     f'stroke-width="2.2"/>'))
+
+
+def message_send():
+    body = shape('M14 24 h30 v20 h-30 z', WHITE)
+    body += line('M14 24 l15 11 l15 -11', 1.8)
+    body += arrow('M46 18 q12 2 12 12', BLUE, 2.4)
+    body += arrow('M56 28 l4 3 -5 1 z', BLUE, 1)
+    return svg(body)
+
+
+def message_check():
+    body = shape('M14 24 h34 v22 h-34 z', WHITE)
+    body += line('M14 24 l17 12 l17 -12', 1.8)
+    body += line('M40 40 l5 5 l9 -11', 3, '#2f9e44')
+    return svg(body)
+
+
+def voice_leave():
+    body = shape('M30 16 h10 v22 h-10 z', GREY)
+    body += line('M30 16 h10 v22 h-10 z')
+    body += line('M36 44 v10 M28 54 h16', 2.4)
+    body += f'<circle cx="52" cy="24" r="5" fill="{RED}" stroke="{K}" stroke-width="1.6"/>'
+    return svg(body)
+
+
+def voice_play():
+    body = shape('M28 18 h12 v24 h-12 z', GREY)
+    body += line('M28 18 h12 v24 h-12 z')
+    body += line('M34 48 v8 M26 56 h16', 2.4)
+    body += shape('M46 22 l12 8 -12 8 z', '#2f9e44')
+    return svg(body)
+
+
+def call_now():
+    body = phone(arrow('M14 20 q10 6 0 14', BLUE, 2.4))
+    return svg(body)
+
+
+def okay():
+    return svg(f'<circle cx="36" cy="36" r="21" fill="{WHITE}" stroke="#2f9e44" stroke-width="3"/>'
+               + line('M25 36 l8 9 l17 -19', 4, '#2f9e44'))
+
+
+def late():
+    body = clock(210).replace('</svg>', '')
+    body += arrow('M50 20 q8 6 4 14', RED, 2.6)
+    body += f'<text x="58" y="18" font-size="12" font-weight="700" fill="{RED}" ' \
+            f'text-anchor="middle" font-family="-apple-system,sans-serif">!</text></svg>'
+    return body
+
+
+def keep_word():
+    return svg(f'<rect x="14" y="20" width="44" height="32" rx="4" fill="{WHITE}" '
+               f'stroke="{K}" stroke-width="{W}"/>'
+               + line('M22 30 h20 M22 38 h14', 2)
+               + line('M42 40 l6 7 l12 -14', 3.4, '#2f9e44'))
+
+
+def break_word():
+    return svg(f'<rect x="14" y="20" width="44" height="32" rx="4" fill="{WHITE}" '
+               f'stroke="{K}" stroke-width="{W}"/>'
+               + line('M22 30 h20 M22 38 h14', 2)
+               + line('M42 40 l14 12 M56 40 l-14 12', 2.8, RED))
+
+
+# ----------------------------------------------------------- weather set
+def cloud_only():
+    body = shape('M20 46 q0 -9 9 -9 q2 -8 11 -6 q8 2 7 10 q7 1 7 7 h-34 z', '#c9d3e4')
+    body += line('M20 46 q0 -9 9 -9 q2 -8 11 -6 q8 2 7 10 q7 1 7 7', 1.8)
+    return svg(body)
+
+
+def cloud_rise():
+    body = shape('M24 52 q0 -8 8 -8 q2 -7 10 -5 q7 2 6 8 q6 1 6 6 h-30 z', '#c9d3e4')
+    body += line('M24 52 q0 -8 8 -8 q2 -7 10 -5 q7 2 6 8 q6 1 6 6', 1.8)
+    body += arrow('M18 30 l0 -12', BLUE, 2.6)
+    body += arrow('M18 18 l-4 5 h8 z', BLUE, 1)
+    return svg(body)
+
+
+def rain_now():
+    body = shape('M20 42 q0 -9 9 -9 q2 -8 11 -6 q8 2 7 10 q7 1 7 7 h-34 z', '#c9d3e4')
+    body += line('M20 42 q0 -9 9 -9 q2 -8 11 -6 q8 2 7 10 q7 1 7 7', 1.8)
+    for x in (24, 34, 44):
+        body += line('M%d 50 l-3 8' % x, 2.4, '#3a7bd5')
+    return svg(body)
+
+
+def sun_now():
+    import math
+    body = f'<circle cx="36" cy="36" r="12" fill="{YELLOW}" stroke="{K}" stroke-width="{W}"/>'
+    for i in range(8):
+        a = math.radians(i * 45)
+        body += ('<path d="M%.1f %.1f L%.1f %.1f" stroke="#f0a500" stroke-width="2.6" '
+                 'stroke-linecap="round"/>'
+                 % (36 + 17 * math.cos(a), 36 + 17 * math.sin(a),
+                    36 + 23 * math.cos(a), 36 + 23 * math.sin(a)))
+    return svg(body)
+
+
+# ------------------------------------------------------------ antonym set
+def bar_len(long=True):
+    w = 46 if long else 18
+    x = (72 - w) / 2
+    return svg(f'<rect x="{x}" y="30" width="{w}" height="12" rx="6" fill="{BLUE}" '
+               f'stroke="{K}" stroke-width="{W}"/>')
+
+
+def slab(thick=True):
+    h = 34 if thick else 12
+    y = (72 - h) / 2
+    return svg(f'<rect x="24" y="{y}" width="24" height="{h}" rx="4" fill="{GREY}" '
+               f'stroke="{K}" stroke-width="{W}"/>')
+
+
+def heavy():
+    body = line('M14 30 H58', 4)
+    for x in (18, 50):
+        body += f'<rect x="{x}" y="20" width="10" height="22" rx="3" fill="{DARK}" stroke="{K}" stroke-width="1.8"/>'
+    body += line('M36 30 v10', 3)
+    return svg(body)
+
+
+def light():
+    body = (f'<path d="M44 14 q-16 10 -22 26 q-4 12 6 14 q10 2 16 -6 q8 -10 0 -34 z" '
+            f'fill="{WHITE}" stroke="{K}" stroke-width="1.8"/>')
+    body += line('M22 44 q10 -4 22 -26', 1.4, '#b9c2d6')
+    return svg(body)
+
+
+def price(high=True):
+    body = (f'<path d="M14 26 l20 -12 24 14 -4 28 -26 6 -14 -18 z" fill="{WHITE}" '
+            f'stroke="{K}" stroke-width="{W}" stroke-linejoin="round"/>')
+    body += f'<circle cx="30" cy="30" r="3" fill="{K}"/>'
+    body += arrow('M44 46 v-14' if high else 'M44 32 v14', RED, 3)
+    body += arrow('M44 30 l-4 6 h8 z' if high else 'M44 48 l-4 -6 h8 z', RED, 1)
+    return svg(body)
+
+
+def near_far(near=True):
+    d = 12 if near else 40
+    body = f'<circle cx="20" cy="36" r="6" fill="{BLUE}" stroke="{K}" stroke-width="1.8"/>'
+    body += f'<circle cx="{20 + d}" cy="36" r="6" fill="{GREEN}" stroke="{K}" stroke-width="1.8"/>'
+    body += line('M26 36 H%d' % (14 + d), 2, '#9aa7c7')
+    return svg(body)
+
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     made = [
@@ -522,6 +708,38 @@ def main():
         ('누구', 'q-who', who()),
         ('맛', 'm-taste', taste()),
         ('맛없다', 'm-tasteless', tasteless()),
+    ]
+    made += [
+        ('전화를 걸다', 'p-call-out', call_out()),
+        ('전화를 받다', 'p-call-in', call_in()),
+        ('전화를 끊다', 'p-call-end', call_end()),
+        ('휴대전화를 켜다', 'p-on', power_on()),
+        ('휴대전화를 끄다', 'p-off', power_off()),
+        ('핸드폰을 켜다', 'p-on2', power_on()),
+        ('핸드폰을 끄다', 'p-off2', power_off()),
+        ('문자메시지를 보내다', 'p-msg-send', message_send()),
+        ('문자메시지를 확인하다', 'p-msg-check', message_check()),
+        ('음성메시지를 남기다', 'p-voice-leave', voice_leave()),
+        ('음성메시지를 확인하다', 'p-voice-play', voice_play()),
+        ('여보세요', 'p-hello', call_now()),
+        ('괜찮다', 'p-okay', okay()),
+        ('늦다', 'p-late', late()),
+        ('약속을 지키다', 'p-keep', keep_word()),
+        ('약속을 어기다', 'p-break', break_word()),
+        ('흐리다', 'w-cloudy', cloud_only()),
+        ('구름이 끼다', 'w-cloud-rise', cloud_rise()),
+        ('비가 오다', 'w-rain', rain_now()),
+        ('맑다', 'w-sunny', sun_now()),
+        ('길다', 'a-long', bar_len(True)),
+        ('짧다', 'a-short', bar_len(False)),
+        ('두껍다', 'a-thick', slab(True)),
+        ('얇다', 'a-thin', slab(False)),
+        ('무겁다', 'a-heavy', heavy()),
+        ('가볍다', 'a-light', light()),
+        ('비싸다', 'a-expensive', price(True)),
+        ('싸다', 'a-cheap', price(False)),
+        ('가깝다', 'a-near', near_far(True)),
+        ('멀다', 'a-far', near_far(False)),
     ]
     for ko, stem, text in made:
         open(os.path.join(OUT, stem + '.svg'), 'w', encoding='utf-8').write(text)
