@@ -506,3 +506,18 @@
   .cl__pt--compact .cl__img { width: 20px; height: 20px; }
   .cl__pt--compact .cl__pt-ko { font-size: 11px; }
 }
+
+/* Number tables: Korean cells are set in Pretendard, whose figures are
+   proportional, so ask for tabular ones explicitly. */
+.numt, .numt__table, .cl__table, .vgrid-card, .wordcard {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Korean-only content asks for the Korean face explicitly. The main --font
+   stack starts with the system fonts, which on macOS have Hangul of their own,
+   so anything Korean that relied on inheritance never reached Pretendard. */
+.numt__ko, .numt__plain, .numt__cnt,
+.vcard__ko, .gex__ko, .cl__ko, .word-row__ko, .wordcard__big,
+.numt__cell .numt__ko {
+  font-family: var(--font-ko);
+}

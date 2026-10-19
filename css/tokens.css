@@ -54,6 +54,10 @@
           "Malgun Gothic", serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
 
+  /* Pretendard (the Korean face) has proportional figures by default; the
+     numeral and counter tables need them tabular or the columns drift. */
+  --numeric: tabular-nums;
+
   /* motion ------------------------------------------------------------- */
   --ease-out:    cubic-bezier(.23, 1, .32, 1);
     /* a touch of overshoot, for letters dropping into place */

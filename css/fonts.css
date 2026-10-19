@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------ fonts
-   Self-hosted, subsetted Noto Sans / Noto Serif (SIL OFL, see CREDITS).
+   Self-hosted, subsetted Pretendard / Noto Sans / Noto Serif (SIL OFL, see CREDITS).
    Three families carry the type system:
 
      黑体 sans   界面：按钮、标签、说明、表格
@@ -12,12 +12,16 @@
    No unicode-range here on purpose: the subset is what defines the coverage,
    and per-character fallback already does the right thing. */
 
+/* The Korean interface face is Pretendard, not Noto Sans KR. Same OFL licence,
+   much closer to the geometric look the reader asked for. It is subset with
+   Hangul AND Latin so digits and punctuation are drawn by the same face, and
+   the family name stays 'YK Sans KR' so no stack has to change. */
 @font-face { font-family: 'YK Sans KR'; font-style: normal; font-weight: 400;
-  font-display: swap; src: url('../assets/fonts/noto-kr-sans-400.woff') format('woff'); }
+  font-display: swap; src: url('../assets/fonts/pretendard-400.woff') format('woff'); }
 @font-face { font-family: 'YK Sans KR'; font-style: normal; font-weight: 500 600;
-  font-display: swap; src: url('../assets/fonts/noto-kr-sans-500.woff') format('woff'); }
+  font-display: swap; src: url('../assets/fonts/pretendard-500.woff') format('woff'); }
 @font-face { font-family: 'YK Sans KR'; font-style: normal; font-weight: 700;
-  font-display: swap; src: url('../assets/fonts/noto-kr-sans-700.woff') format('woff'); }
+  font-display: swap; src: url('../assets/fonts/pretendard-700.woff') format('woff'); }
 
 @font-face { font-family: 'YK Sans SC'; font-style: normal; font-weight: 400;
   font-display: swap; src: url('../assets/fonts/noto-sc-sans-400.woff') format('woff'); }

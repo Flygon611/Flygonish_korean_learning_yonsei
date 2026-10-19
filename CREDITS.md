@@ -81,3 +81,16 @@
 - 与 irasutoya 的区别：象形图是**确定性的**——一个韩语词对应一个文件，
   不依赖搜索，因此不会出现"歌手配龙卷风"这类错配
 - 若要商用或再分发，注意 CC BY-SA 的相同方式共享条款
+
+## Pretendard（韩文界面字体）
+
+- 来源：https://github.com/orioncactus/pretendard
+- 许可：**SIL OFL 1.1**（允许子集化、修改、自托管）
+- 用途：替换原来的 Noto Sans KR，用于界面里的韩文（`--font-ko`）
+- 子集：只含本站用到的韩文 + 拉丁 + 符号，86–87 KB/字重
+- 为什么换：几何无衬线，比 Noto 更接近 HarmonyOS Sans 的观感
+- 注意：Pretendard 的数字是**比例宽**，所以数词表、量词表等加了
+  `font-variant-numeric: tabular-nums` 保证列对齐
+
+未采用 HarmonyOS Sans 的原因：它**没有韩文字形**（实测 Hangul 0/11172），
+且其自定义许可未授予修改/子集化权利（见 README 的字体一节）。

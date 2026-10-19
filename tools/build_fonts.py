@@ -5,7 +5,7 @@
 Four families, all SIL OFL, all subset to the characters this site actually
 contains so the files stay small:
 
-    noto-kr-sans-*    Hangul, interface face
+    pretendard-*      Hangul + Latin, interface face (was noto-kr-sans)
     noto-kr-serif-*   Hangul, reading/headline face (본문·이름)
     noto-sc-sans-*    Chinese, interface face
     noto-sc-serif-*   Chinese, headline face
@@ -31,6 +31,12 @@ PLAN = [
     ('kr-serif', 'SerifKR', [('400', 'Regular'), ('700', 'Bold')]),
     ('sc-serif', 'SerifSC', [('400', 'Regular'), ('700', 'Bold')]),
 ]
+
+# Pretendard replaces Noto Sans KR for the interface face: same OFL licence,
+# but a geometric grotesque much closer to the HarmonyOS Sans look. It is
+# subset with Hangul AND Latin, so digits and Latin punctuation are drawn by
+# the same face and the line does not shift at the boundary.
+PRETENDARD = [('400', 'Regular'), ('500', 'Medium'), ('700', 'Bold')]
 
 EXTRA = (
     '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'
@@ -94,6 +100,19 @@ def main():
     print(f'characters used: {len(chars)}   hangul: {len(hangul)}   cjk: {len(cjk)}')
 
     total = 0
+    # Pretendard: Hangul + Latin + the shared symbol set
+    latin = ''.join(sorted(c for c in chars if ord(c) < 0x2500 and c.strip()))
+    pd_text = ''.join(dict.fromkeys(hangul + latin + EXTRA))
+    for weight, suffix in PRETENDARD:
+        src = os.path.join(SRC, 'Pretendard-%s.otf' % suffix)
+        if not os.path.exists(src):
+            print('  ! missing %s' % src); continue
+        dst = os.path.join(OUT, 'pretendard-%s.woff' % weight)
+        subset(src, dst, pd_text)
+        kb = os.path.getsize(dst) // 1024
+        total += kb
+        print('  pretendard-%s.woff  %s KB' % (weight, kb))
+
     for name, family, weights in PLAN:
         text = hangul if name.startswith('kr') else cjk
         if not text:
