@@ -391,7 +391,11 @@ def repair_merged_vocab(out):
     so it can be split and the lost word restored.
     """
     import re as _re
-    split = _re.compile(r'^([^\uac00-\ud7af]*?)\s*([\uac00-\ud7af]+)\s*(.*)$')
+    # Require a SPACE before the Hangul word. A merged cell always has one
+    # (the pieces came from separate cells); a legitimate gloss keeps its Hangul
+    # inside quotes with no space — "이/가"的敬语, 主格助词"께서" — and must not be
+    # touched. Without this, ~6 correct glosses got chopped into nonsense.
+    split = _re.compile(r'^([^\uac00-\ud7af]*?)(?:^|\s)([\uac00-\ud7af]+)\s*(.+)$')
     fixed = 0
     for lesson in out.get('lessons', []):
         for sec in lesson.get('sections', []):

@@ -457,23 +457,33 @@ go('#/vocab?mode=flash');
   }
 
   /* A meaning cell that spanned into the next row used to glue two words
-     together — 아버지 came out as "爸爸 어머니 妈妈" and 어머니 was lost. No
-     glossary should contain Hangul. */
+     together — 아버지 came out as "爸爸 어머니 妈妈" and 어머니 was lost. The
+     tell is a Hangul word surrounded by spaces; Hangul inside quotes is a real
+     gloss ("이/가"的敬语) and must be left alone. */
   {
-    let hungul = 0, total = 0;
+    let merged = 0, total = 0;
     for (const L of window.YK_LESSONS.lessons)
       for (const sec of L.sections)
         for (const v of (sec.vocab || [])) {
           total++;
-          if (/[\uac00-\ud7af]/.test(v.zh || '')) hungul++;
+          if (/\s[\uac00-\ud7af]+\s/.test(v.zh || '') || /^[[\uac00-\ud7af]\s]/.test(v.zh || '')) merged++;
         }
-    check('vocab: no glossary absorbed the next word', hungul === 0, hungul + ' of ' + total);
+    check('vocab: no glossary absorbed the next word', merged === 0, merged + ' of ' + total);
     check('vocab: lesson 3-2 lists every family word',
       (() => {
         const L = window.YK_LESSONS.lessons.find((x) => x.no === 3);
         const sec = L && L.sections.find((x) => x.section === 2);
         const ko = sec ? sec.vocab.map((v) => v.ko) : [];
         return ['어머니', '할머니', '외할머니', '형', '모두', '부모님'].every((w) => ko.indexOf(w) >= 0);
+      })());
+    check('vocab: a gloss may still quote Hangul',
+      (() => {
+        const all = [];
+        for (const L of window.YK_LESSONS.lessons)
+          for (const sec of L.sections)
+            for (const v of (sec.vocab || [])) all.push(v);
+        const kkeseo = all.find((v) => v.ko === '께서');
+        return !!kkeseo && kkeseo.zh.indexOf('이/가') >= 0;
       })());
   }
 
