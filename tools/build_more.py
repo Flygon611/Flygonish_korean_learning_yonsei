@@ -309,6 +309,132 @@ def homeland():
 
 
 
+
+
+# ------------------------------------------------------ movement and deixis
+def arrow(d, colour=BLUE, w=3.4):
+    return ('<path d="%s" fill="none" stroke="%s" stroke-width="%s" stroke-linecap="round"/>'
+            % (d, colour, w))
+
+
+def door_out():
+    """나가다: a figure heading out through the doorway."""
+    body = shape('M40 16 h20 v40 h-20 z', '#e9edf5')
+    body += line('M40 16 h20 v40 h-20 z')
+    body += f'<circle cx="24" cy="26" r="6.4" fill="{CREAM}" stroke="{K}" stroke-width="1.8"/>'
+    body += line('M24 34 v12', 3)
+    body += arrow('M14 48 q10 4 18 0')
+    body += arrow('M32 46 l-5 -3 v6 z', BLUE, 1)
+    return svg(body)
+
+
+def door_in():
+    """들어오다: a figure arriving through the doorway."""
+    body = shape('M12 16 h20 v40 h-20 z', '#e9edf5')
+    body += line('M12 16 h20 v40 h-20 z')
+    body += f'<circle cx="48" cy="26" r="6.4" fill="{CREAM}" stroke="{K}" stroke-width="1.8"/>'
+    body += line('M48 34 v12', 3)
+    body += arrow('M58 48 q-10 4 -18 0')
+    body += arrow('M40 46 l5 -3 v6 z', BLUE, 1)
+    return svg(body)
+
+
+def stairs(up=True):
+    """올라가다 / 내려오다: steps with the direction drawn on them."""
+    body = ''
+    for i in range(4):
+        x, y = 16 + i * 10, 46 - i * 9
+        body += shape('M%d %d h10 v9 h-10 z' % (x, y), '#dfe6f2')
+    body += arrow('M18 50 L52 22' if up else 'M18 20 L52 50', BLUE, 3.4)
+    if up:
+        body += arrow('M52 22 l-8 1 4 7 z', BLUE, 1)
+    else:
+        body += arrow('M52 50 l-8 -1 4 -7 z', BLUE, 1)
+    return svg(body)
+
+
+def this_thing(near=True):
+    """이것 / 저것: a hand pointing at an object, close or far."""
+    body = shape('M14 30 h20 v16 h-20 z', WHITE if near else '#eef1f6')
+    body += line('M14 30 h20 v16 h-20 z')
+    if not near:
+        body = '<g transform="scale(.72) translate(30 14)">' + body + '</g>'
+    hand = (f'<circle cx="{"34" if near else "50"}" cy="{"34" if near else "30"}" r="5" '
+            f'fill="{CREAM}" stroke="{K}" stroke-width="1.6"/>')
+    hand += arrow('M48 44 q-8 -3 -12 -6' if near else 'M62 40 q-6 -2 -10 -4', CREAM, 3)
+    body += hand
+    body += (f'<text x="24" y="60" font-size="14" font-weight="700" fill="{DARK}" '
+             f'text-anchor="middle" font-family="-apple-system,sans-serif">'
+             f'{"이" if near else "저"}</text>')
+    return svg(body)
+
+
+# --------------------------------------------------------------- time
+def clock(angle, colour=BLUE, big=None):
+    import math
+    body = f'<circle cx="36" cy="36" r="21" fill="#fff" stroke="{K}" stroke-width="{W}"/>'
+    for i in range(12):
+        a = math.radians(i * 30 - 90)
+        body += ('<path d="M%.1f %.1f L%.1f %.1f" stroke="%s" stroke-width="%s"/>'
+                 % (36 + 16 * math.cos(a), 36 + 16 * math.sin(a),
+                    36 + 19 * math.cos(a), 36 + 19 * math.sin(a), GREY, 1.6))
+    a = math.radians(angle - 90)
+    body += ('<path d="M36 36 L%.1f %.1f" stroke="%s" stroke-width="4" stroke-linecap="round"/>'
+             % (36 + 13 * math.cos(a), 36 + 13 * math.sin(a), colour))
+    body += f'<circle cx="36" cy="36" r="2.6" fill="{K}"/>'
+    return svg(body)
+
+
+def now():
+    """지금: a clock with the moment marked on the outside."""
+    return svg(clock(60).replace('</svg>', '')
+               + f'<circle cx="36" cy="36" r="26" fill="none" stroke="{ORANGE}" '
+                 f'stroke-width="2.4" stroke-dasharray="5 4"/></svg>')
+
+
+def date_ask():
+    """며칠: a calendar page with a question mark."""
+    body = shape('M14 18 h44 v40 h-44 z', WHITE)
+    body += shape('M14 18 h44 v9 h-44 z', '#6b5b9b')
+    body += line('M14 18 h44 v40 h-44 z')
+    body += (f'<text x="36" y="49" font-size="20" font-weight="700" fill="{DARK}" '
+             f'text-anchor="middle" font-family="-apple-system,sans-serif">?</text>')
+    return svg(body)
+
+
+def weather_icon():
+    body = f'<circle cx="28" cy="28" r="9" fill="{YELLOW}" stroke="{K}" stroke-width="1.8"/>'
+    body += shape('M22 46 q0 -8 8 -8 q2 -7 10 -5 q7 2 6 9 q6 1 6 6 h-30 z', '#fff')
+    body += line('M22 46 q0 -8 8 -8 q2 -7 10 -5 q7 2 6 9 q6 1 6 6', 1.8)
+    body += line('M36 50 q-6 6 -10 2 M46 50 q3 6 7 3', 1.8)
+    return svg(body)
+
+
+def who():
+    body = f'<circle cx="28" cy="28" r="9" fill="{CREAM}" stroke="{K}" stroke-width="1.8"/>'
+    body += shape('M14 56 q0 -14 14 -14 t14 14 z', BLUE)
+    body += (f'<text x="52" y="46" font-size="22" font-weight="700" fill="{DARK}" '
+             f'text-anchor="middle" font-family="-apple-system,sans-serif">?</text>')
+    return svg(body)
+
+
+def taste():
+    """맛: a tongue, which is what "taste" literally is."""
+    body = shape('M24 18 q24 0 24 22 q0 22 -12 22 q-12 0 -12 -22 q0 -22 0 -22 z', PINK)
+    body += line('M36 20 v34', 1.6)
+    body += line('M28 26 q8 4 16 0', 1.4)
+    return svg(body)
+
+
+def tasteless():
+    body = f'<circle cx="34" cy="34" r="18" fill="{CREAM}" stroke="{K}" stroke-width="{W}"/>'
+    body += line('M26 30 q4 -3 8 0 M42 30 q4 -3 8 0', 1.8)
+    body += line('M26 44 q8 -6 16 0', 2)
+    body += line('M10 10 l52 52', 3.2)
+    return svg(body)
+
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     made = [
@@ -380,6 +506,22 @@ def main():
         ('처음 뵙겠습니다', 'e-meet', handshake()),
         ('하다', 'e-do', doing_hand()),
         ('아니요', 'e-no', no()),
+    ]
+    made += [
+        ('나가다', 'v-out', door_out()),
+        ('들어오다', 'v-in', door_in()),
+        ('올라가다', 'v-up', stairs(True)),
+        ('내려오다', 'v-down', stairs(False)),
+        ('이것', 'x-this', this_thing(True)),
+        ('저것', 'x-that', this_thing(False)),
+        ('지금', 't-now', now()),
+        ('시', 't-hour', clock(0)),
+        ('분', 't-minute', clock(90)),
+        ('며칠', 't-which-day', date_ask()),
+        ('날씨', 'w-weather', weather_icon()),
+        ('누구', 'q-who', who()),
+        ('맛', 'm-taste', taste()),
+        ('맛없다', 'm-tasteless', tasteless()),
     ]
     for ko, stem, text in made:
         open(os.path.join(OUT, stem + '.svg'), 'w', encoding='utf-8').write(text)

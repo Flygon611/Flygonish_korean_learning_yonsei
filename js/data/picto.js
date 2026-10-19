@@ -472,5 +472,19 @@ window.YK_PICTO = {
  "아니요": "assets/picto/e-no.svg",
  "사과": "assets/openmoji/1f34e.svg",
  "좋다": "assets/openmoji/1f44d.svg",
- "나쁘다": "assets/openmoji/1f44e.svg"
+ "나쁘다": "assets/openmoji/1f44e.svg",
+ "나가다": "assets/picto/v-out.svg",
+ "들어오다": "assets/picto/v-in.svg",
+ "올라가다": "assets/picto/v-up.svg",
+ "내려오다": "assets/picto/v-down.svg",
+ "이것": "assets/picto/x-this.svg",
+ "저것": "assets/picto/x-that.svg",
+ "지금": "assets/picto/t-now.svg",
+ "시": "assets/picto/t-hour.svg",
+ "분": "assets/picto/t-minute.svg",
+ "며칠": "assets/picto/t-which-day.svg",
+ "날씨": "assets/picto/w-weather.svg",
+ "누구": "assets/picto/q-who.svg",
+ "맛": "assets/picto/m-taste.svg",
+ "맛없다": "assets/picto/m-tasteless.svg"
 };
