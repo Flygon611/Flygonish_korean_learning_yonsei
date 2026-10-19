@@ -1,9 +1,10 @@
 /* Korean word -> illustration.
    - assets/openmoji/* : from OpenMoji (CC BY-SA 4.0)
-   - assets/picto/*    : drawn or generated here by tools/build_pictos.py,
-                         tools/build_scenes.py and tools/build_dishes.py —
+   - assets/picto/*    : drawn or generated here (tools/build_pictos.py,
+                         build_scenes.py, build_dishes.py, build_more.py) —
                          numerals, position words, family composites, schematic
-                         concepts, time relations and Korean dishes
+                         concepts, time relations, Korean dishes, classroom
+                         things, family people, school subjects, tastes, shops
    Every entry was looked at on a contact sheet before being wired up. */
 window.YK_PICTO = {
  "사람": "assets/openmoji/1f9d1.svg",
@@ -409,5 +410,35 @@ window.YK_PICTO = {
  "다음 달": "assets/picto/time-next-month.svg",
  "제일": "assets/picto/time-most.svg",
  "가장": "assets/picto/time-most.svg",
- "떡볶이": "assets/picto/dish-tteokbokki.svg"
+ "떡볶이": "assets/picto/dish-tteokbokki.svg",
+ "칠판": "assets/picto/more-blackboard.svg",
+ "분필": "assets/picto/more-chalk.svg",
+ "책상": "assets/picto/more-desk.svg",
+ "읽기책": "assets/picto/more-reading-book.svg",
+ "손수건": "assets/picto/more-handkerchief.svg",
+ "역": "assets/picto/more-station.svg",
+ "외할아버지": "assets/picto/more-grandpa-maternal.svg",
+ "외할머니": "assets/picto/more-grandma-maternal.svg",
+ "언니": "assets/picto/more-older-sister-f.svg",
+ "나": "assets/picto/more-me.svg",
+ "남": "assets/picto/more-male.svg",
+ "여": "assets/picto/more-female.svg",
+ "경제학": "assets/picto/more-econ.svg",
+ "역사학": "assets/picto/more-history.svg",
+ "컴퓨터공학": "assets/picto/more-cs.svg",
+ "정치학": "assets/picto/more-politics.svg",
+ "법학": "assets/picto/more-law.svg",
+ "경영학": "assets/picto/more-business.svg",
+ "영문학": "assets/picto/more-english.svg",
+ "생물학": "assets/picto/more-biology.svg",
+ "전공": "assets/picto/more-major.svg",
+ "맵다": "assets/picto/more-spicy.svg",
+ "달다": "assets/picto/more-sweet.svg",
+ "시다": "assets/picto/more-sour.svg",
+ "짜다": "assets/picto/more-salty.svg",
+ "싱겁다": "assets/picto/more-bland.svg",
+ "한식집": "assets/picto/more-shop-korean.svg",
+ "중국집": "assets/picto/more-shop-chinese.svg",
+ "일식집": "assets/picto/more-shop-japanese.svg",
+ "양식집": "assets/picto/more-shop-western.svg"
 };
