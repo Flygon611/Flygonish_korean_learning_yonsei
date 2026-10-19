@@ -621,6 +621,270 @@ def near_far(near=True):
 
 
 
+
+
+# ----------------------------------------------------------- seasons
+def flower():
+    body = ''
+    for i in range(5):
+        import math
+        a = math.radians(i * 72 - 90)
+        body += (f'<circle cx="{36 + 13 * math.cos(a):.1f}" cy="{30 + 13 * math.sin(a):.1f}" '
+                 f'r="8" fill="{PINK}" stroke="{K}" stroke-width="1.6"/>')
+    body += f'<circle cx="36" cy="30" r="6" fill="{YELLOW}" stroke="{K}" stroke-width="1.6"/>'
+    body += line('M36 44 v16', 3, GREEN)
+    body += f'<path d="M36 50 q-10 -4 -12 4 q10 2 12 -4 z" fill="{GREEN}" stroke="{K}" stroke-width="1.2"/>'
+    return svg(body)
+
+
+def summer():
+    body = sun_now().replace('</svg>', '')
+    body += line('M12 58 q8 -6 16 0 t16 0', 2.4, '#3a7bd5')
+    body += line('M12 64 q8 -6 16 0 t16 0', 2, '#3a7bd5')
+    return body + '</svg>'
+
+
+def autumn():
+    body = (f'<path d="M36 14 q18 8 14 26 q-4 16 -14 20 q-10 -4 -14 -20 q-4 -18 14 -26 z" '
+            f'fill="{ORANGE}" stroke="{K}" stroke-width="{W}"/>')
+    body += line('M36 20 v46', 1.8)
+    body += line('M36 32 l-9 6 M36 32 l9 6 M36 44 l-9 6 M36 44 l9 6', 1.4)
+    return svg(body)
+
+
+def winter():
+    import math
+    body = ''
+    for i in range(6):
+        a = math.radians(i * 60)
+        body += ('<path d="M36 36 L%.1f %.1f" stroke="#3a7bd5" stroke-width="3" '
+                 'stroke-linecap="round"/>' % (36 + 22 * math.cos(a), 36 + 22 * math.sin(a)))
+        for side in (-35, 35):
+            b = math.radians(i * 60 + side)
+            body += ('<path d="M%.1f %.1f L%.1f %.1f" stroke="#3a7bd5" stroke-width="2.2" '
+                     'stroke-linecap="round"/>'
+                     % (36 + 12 * math.cos(a), 36 + 12 * math.sin(a),
+                        36 + 18 * math.cos(b), 36 + 18 * math.sin(b)))
+    return svg(body)
+
+
+def seasons():
+    """계절: four seasons in one frame."""
+    half = dict(spring=flower, summer=summer, autumn=autumn, winter=winter)
+    def mini(fn, tx, ty):
+        inner = fn().replace('</svg>', '').replace('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72" width="72" height="72">', '')
+        return f'<g transform="translate({tx} {ty}) scale(.46)">{inner}</g>'
+    body = mini(half['spring'], 0, -4) + mini(half['summer'], 36, -4)
+    body += mini(half['autumn'], 0, 32) + mini(half['winter'], 36, 32)
+    return svg(body)
+
+
+def ski():
+    body = f'<circle cx="28" cy="20" r="6" fill="{CREAM}" stroke="{K}" stroke-width="1.8"/>'
+    body += line('M28 26 l6 12 l-8 10', 3)
+    body += line('M34 38 l12 4', 3)
+    body += line('M24 52 l18 6', 3.4, '#8b5a2b')
+    body += line('M40 16 l10 42', 3.4, '#8b5a2b')
+    body += line('M18 58 h46', 2, '#c9d3e4')
+    return svg(body)
+
+
+def ski_resort():
+    body = f'<path d="M8 54 L26 26 L40 44 L50 32 L64 54 z" fill="#dfe6f2" stroke="{K}" stroke-width="{W}" stroke-linejoin="round"/>'
+    body += f'<path d="M26 26 l4 -4 l4 4" fill="{WHITE}" stroke="{K}" stroke-width="1.6"/>'
+    body += line('M30 40 l10 16 M38 36 l12 20', 2.4, '#8b5a2b')
+    body += line('M8 58 h56', 2, '#c9d3e4')
+    return svg(body)
+
+
+# -------------------------------------------------------- temperature
+def thermometer(level, colour):
+    """level 0..1 — warm and cool are the same object at different heights."""
+    top = 46 - 28 * level
+    body = (f'<rect x="30" y="12" width="12" height="38" rx="6" fill="#eef1f6" stroke="{K}" '
+            f'stroke-width="{W}"/>')
+    body += (f'<rect x="32.5" y="{top:.1f}" width="7" height="{44 - top:.1f}" rx="3.5" '
+             f'fill="{colour}"/>')
+    body += f'<circle cx="36" cy="54" r="9" fill="{colour}" stroke="{K}" stroke-width="{W}"/>'
+    for y in (20, 27, 34, 41):
+        body += line('M44 %d h4' % y, 1.6, GREY)
+    return svg(body)
+
+
+def degree():
+    body = thermometer(0.55, RED).replace('</svg>', '')
+    body += f'<text x="56" y="24" font-size="16" font-weight="700" fill="{DARK}" ' \
+            f'text-anchor="middle" font-family="-apple-system,sans-serif">°</text></svg>'
+    return body
+
+
+# ------------------------------------------------------ misc 9-10
+def start_of():
+    """초: the first block of a calendar row, marked."""
+    body = ''
+    for i in range(3):
+        x = 10 + i * 18
+        fill = BLUE if i == 0 else '#eef1f6'
+        body += f'<rect x="{x}" y="24" width="14" height="16" rx="2.5" fill="{fill}" stroke="{K}" stroke-width="1.4"/>'
+    body += line('M10 46 h50', 1.6)
+    body += arrow('M10 56 l6 -6', BLUE, 2.2)
+    return svg(body)
+
+
+def snap_photo():
+    body = (f'<rect x="12" y="22" width="36" height="24" rx="4" fill="{GREY}" stroke="{K}" '
+            f'stroke-width="{W}"/>')
+    body += f'<circle cx="30" cy="34" r="7" fill="{WHITE}" stroke="{K}" stroke-width="1.8"/>'
+    body += f'<circle cx="30" cy="34" r="3" fill="{DARK}"/>'
+    body += f'<rect x="18" y="18" width="10" height="5" rx="2" fill="{DARK}" stroke="{K}" stroke-width="1.2"/>'
+    body += line('M52 24 l8 -4 M52 34 h9 M52 44 l8 4', 2.2, ORANGE)
+    return svg(body)
+
+
+def difficult():
+    body = f'<rect x="12" y="14" width="22" height="22" rx="3" fill="{PINK}" stroke="{K}" stroke-width="1.8"/>'
+    body += f'<circle cx="23" cy="25" r="6" fill="#fff" stroke="{K}" stroke-width="1.6"/>'
+    body += f'<rect x="38" y="14" width="22" height="22" rx="3" fill="{GREY}" stroke="{K}" stroke-width="1.8"/>'
+    body += f'<rect x="45" y="21" width="8" height="8" rx="2" fill="#fff" stroke="{K}" stroke-width="1.6"/>'
+    body += f'<rect x="12" y="40" width="22" height="22" rx="3" fill="{GREY}" stroke="{K}" stroke-width="1.8"/>'
+    body += f'<path d="M26 44 v14" stroke="#fff" stroke-width="3"/>'
+    body += (f'<text x="52" y="56" font-size="20" font-weight="700" fill="{DARK}" '
+             f'text-anchor="middle" font-family="-apple-system,sans-serif">?</text>')
+    return svg(body)
+
+
+def comfortable():
+    body = (f'<path d="M14 44 q0 -10 8 -10 h28 q8 0 8 10 v8 h-44 z" fill="{BLUE}" '
+            f'stroke="{K}" stroke-width="{W}" stroke-linejoin="round"/>')
+    body += line('M14 44 v-6 q0 -6 6 -6 h32 q6 0 6 6 v6', 2.4)
+    body += line('M12 52 v6 M60 52 v6', 3)
+    return svg(body)
+
+
+def buy_ticket():
+    body = f'<rect x="12" y="24" width="34" height="20" rx="3" fill="{WHITE}" stroke="{K}" stroke-width="{W}"/>'
+    body += line('M29 24 v20', 1.6)
+    body += f'<circle cx="20" cy="34" r="3" fill="{GREY}"/>'
+    body += line('M24 34 h3', 1.4)
+    body += arrow('M52 20 q8 8 2 18', GREEN, 2.4)
+    return svg(body)
+
+
+def pingpong():
+    body = f'<ellipse cx="26" cy="30" rx="13" ry="15" fill="{RED}" stroke="{K}" stroke-width="{W}"/>'
+    body += line('M30 44 l6 14', 3.4, WOOD)
+    body += f'<circle cx="50" cy="26" r="6" fill="{WHITE}" stroke="{K}" stroke-width="1.8"/>'
+    body += arrow('M44 34 q-8 8 -2 16', BLUE, 2)
+    return svg(body)
+
+
+def learn():
+    body = f'<rect x="14" y="22" width="26" height="32" rx="2" fill="{BLUE}" stroke="{K}" stroke-width="{W}"/>'
+    body += line('M20 30 h14 M20 38 h14 M20 46 h9', 1.6, '#fff')
+    body += f'<circle cx="52" cy="24" r="7" fill="{CREAM}" stroke="{K}" stroke-width="1.8"/>'
+    body += line('M52 31 v12 M52 35 l-6 6 M52 35 l6 6 M52 43 l-6 8 M52 43 l6 8', 2.4)
+    return svg(body)
+
+
+def step_aside():
+    body = f'<circle cx="28" cy="22" r="6" fill="{CREAM}" stroke="{K}" stroke-width="1.8"/>'
+    body += line('M28 28 v14 M28 34 l-6 8 M28 34 l6 8', 2.6)
+    body += arrow('M12 50 l-6 0', BLUE, 2.2)
+    body += arrow('M50 50 h6', BLUE, 2.2)
+    return svg(body)
+
+
+def careful():
+    body = f'<path d="M36 12 L60 54 H12 z" fill="{YELLOW}" stroke="{K}" stroke-width="{W}" stroke-linejoin="round"/>'
+    body += line('M36 26 v14', 3.4)
+    body += f'<circle cx="36" cy="47" r="2.4" fill="{K}"/>'
+    return svg(body)
+
+
+def transfer():
+    body = f'<rect x="14" y="18" width="20" height="16" rx="3" fill="{BLUE}" stroke="{K}" stroke-width="1.8"/>'
+    body += f'<rect x="40" y="38" width="20" height="16" rx="3" fill="{GREEN}" stroke="{K}" stroke-width="1.8"/>'
+    body += arrow('M34 30 q10 0 10 8', RED, 2.4)
+    body += arrow('M44 40 l-5 -4 0 7 z', RED, 1)
+    return svg(body)
+
+
+def arrive():
+    body = line('M18 58 H40', 2.4, GREY)
+    body += line('M40 58 V14', 2.4, GREY)
+    body += f'<path d="M40 14 l18 6 l-18 6 z" fill="{GREEN}" stroke="{K}" stroke-width="1.6"/>'
+    body += f'<circle cx="18" cy="52" r="5" fill="{BLUE}" stroke="{K}" stroke-width="1.6"/>'
+    return svg(body)
+
+
+def stop_car():
+    body = f'<rect x="14" y="30" width="30" height="14" rx="4" fill="{RED}" stroke="{K}" stroke-width="{W}"/>'
+    body += line('M20 30 l6 -8 h12 l6 8', 2)
+    body += f'<circle cx="22" cy="46" r="4" fill="{DARK}"/><circle cx="40" cy="46" r="4" fill="{DARK}"/>'
+    body += line('M54 26 v20', 3.4, GREY)
+    body += f'<path d="M48 24 h14 l-3 -5 h-8 z" fill="{BLUE}" stroke="{K}" stroke-width="1.4"/>'
+    return svg(body)
+
+
+def intl_call():
+    body = globe().replace('</svg>', '')
+    body += f'<rect x="40" y="40" width="16" height="22" rx="3" fill="{WHITE}" stroke="{K}" stroke-width="1.8"/>'
+    body += arrow('M30 28 q10 6 12 14', BLUE, 2)
+    return body + '</svg>'
+
+
+def long_call():
+    body = f'<rect x="8" y="34" width="30" height="16" rx="3" fill="{GREY}" stroke="{K}" stroke-width="1.8"/>'
+    body += line('M12 42 h22', 1.6, '#fff')
+    body += f'<rect x="44" y="34" width="16" height="16" rx="3" fill="{WHITE}" stroke="{K}" stroke-width="1.8"/>'
+    body += line('M38 42 h6', 2, GREY)
+    return svg(body)
+
+
+def appt_place():
+    body = where().replace('</svg>', '')
+    body += f'<rect x="42" y="12" width="18" height="16" rx="2" fill="{WHITE}" stroke="{K}" stroke-width="1.6"/>'
+    body += line('M45 12 v-3 M57 12 v-3', 1.6)
+    body += line('M46 20 h10', 1.4, GREY)
+    return body + '</svg>'
+
+
+def appt_time():
+    body = clock(300).replace('</svg>', '')
+    body += f'<rect x="46" y="14" width="18" height="16" rx="2" fill="{WHITE}" stroke="{K}" stroke-width="1.6"/>'
+    body += line('M49 14 v-3 M61 14 v-3', 1.6)
+    body += line('M50 22 h10', 1.4, GREY)
+    return body + '</svg>'
+
+
+def morning():
+    body = f'<path d="M12 48 a24 24 0 0 1 48 0 z" fill="{YELLOW}" stroke="{K}" stroke-width="{W}"/>'
+    body += line('M8 52 h56', 2.4)
+    body += arrow('M36 22 v-10', ORANGE, 2.6)
+    return svg(body)
+
+
+def afternoon():
+    body = f'<path d="M12 28 a24 24 0 0 0 48 0 z" fill="{ORANGE}" stroke="{K}" stroke-width="{W}"/>'
+    body += line('M8 24 h56', 2.4)
+    body += arrow('M36 54 v10', RED, 2.6)
+    return svg(body)
+
+
+def thought():
+    body = (f'<path d="M18 26 q-6 -14 10 -16 q6 -8 18 -4 q14 -2 14 12 q8 6 2 14 q2 12 -12 12 '
+            f'h-24 q-12 -2 -8 -18 z" fill="{WHITE}" stroke="{K}" stroke-width="{W}" stroke-linejoin="round"/>')
+    for cx, cy, r in ((24, 50, 3.4), (18, 58, 2.4)):
+        body += f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="{WHITE}" stroke="{K}" stroke-width="1.6"/>'
+    body += f'<circle cx="30" cy="34" r="2" fill="{DARK}"/><circle cx="38" cy="34" r="2" fill="{DARK}"/>'
+    return svg(body)
+
+
+def hobby_photo():
+    return snap_photo()
+
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     made = [
@@ -740,6 +1004,38 @@ def main():
         ('싸다', 'a-cheap', price(False)),
         ('가깝다', 'a-near', near_far(True)),
         ('멀다', 'a-far', near_far(False)),
+    ]
+    made += [
+        ('봄', 's-spring', flower()),
+        ('여름', 's-summer', summer()),
+        ('가을', 's-autumn', autumn()),
+        ('겨울', 's-winter', winter()),
+        ('계절', 's-seasons', seasons()),
+        ('스키', 's-ski', ski()),
+        ('스키장', 's-ski-resort', ski_resort()),
+        ('따뜻하다', 'm-warm', thermometer(0.75, '#e8590c')),
+        ('선선하다', 'm-cool', thermometer(0.45, '#3a7bd5')),
+        ('쌀쌀하다', 'm-chilly', thermometer(0.2, '#3a5f8b')),
+        ('도', 'm-degree', degree()),
+        ('초', 'k-start', start_of()),
+        ('찍다', 'k-snap', snap_photo()),
+        ('어렵다', 'k-hard', difficult()),
+        ('편하다', 'k-comfy', comfortable()),
+        ('예매하다', 'k-book', buy_ticket()),
+        ('탁구를 치다', 'k-pingpong', pingpong()),
+        ('배우다', 'k-learn', learn()),
+        ('비키다', 'k-step-aside', step_aside()),
+        ('조심하다', 'k-careful', careful()),
+        ('갈아타다', 'k-transfer', transfer()),
+        ('도착하다', 'k-arrive', arrive()),
+        ('세우다', 'k-stop', stop_car()),
+        ('국제전화', 'k-intl-call', intl_call()),
+        ('시외전화', 'k-long-call', long_call()),
+        ('약속 장소', 'k-appt-place', appt_place()),
+        ('약속 시간', 'k-appt-time', appt_time()),
+        ('오전', 'k-morning', morning()),
+        ('오후', 'k-afternoon', afternoon()),
+        ('생각', 'k-thought', thought()),
     ]
     for ko, stem, text in made:
         open(os.path.join(OUT, stem + '.svg'), 'w', encoding='utf-8').write(text)
